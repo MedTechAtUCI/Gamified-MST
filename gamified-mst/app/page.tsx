@@ -1,4 +1,4 @@
-import TaskPage from "./components/TaskPage";
+import TaskPage from "@/app/components/TaskPage/TaskPage";
 
 const Page = () => <TaskPage />;
 

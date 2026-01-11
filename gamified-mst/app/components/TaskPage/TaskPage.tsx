@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from "react";
-import SetupComponent, { Session } from "../setup";
+import SetupComponent, { Session } from "@/app/setup";
 import {
   TaskType,
   JsPsychBundle,
   JsPsychInit,
   RawTrial,
   TrialData,
-} from "../types/mst";
+} from "@/app/types/mst";
 
 import 'jspsych/css/jspsych.css';
 
@@ -118,7 +118,7 @@ const TaskPage = () => {
   useEffect(() => { if (ready) { loadResources('Flatx2'); } }, [ready, loadResources]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "2rem" }}>
+    <div className="taskPageContainer">
       {!ready && (
         <SetupComponent
           setSessionData={(session) => setSessionData(session)}
@@ -131,8 +131,8 @@ const TaskPage = () => {
       {ready && (
         <button
           id="continueButton"
+          className="taskPageButton"
           onClick={() => loadResources('Flatx2').then(startExperiment)}
-          style={{ fontSize: "1.25rem", marginTop: "1rem" }}
         >
           Start Task
         </button>
