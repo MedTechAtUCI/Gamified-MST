@@ -1,18 +1,23 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import SetupComponent from "./setup";
+import { useCallback, useEffect, useState } from "react";
+import SetupComponent, { Session } from "./setup";
+import {
+  TaskType,
+  JsPsychBundle,
+  JsPsychInit,
+  RawTrial,
+  TrialData,
+} from "./types/mst";
 // import Instructions from "./Instructions";
 
 import 'jspsych/css/jspsych.css';
 
-type TaskType = 'Flatx2'; // Either Flatx2, Imbal2, or Imbal2x3
-
 const TaskPage = () => {
-  const [trialList, setTrialList] = useState<any[]>([]);
-  const [jsPsychPlugins, setJsPsychPlugins] = useState<any>(null);
-  const [sessionData, setSessionData] = useState<any>(null);
-  const [ready, setReady] = useState<any>(false);
+  const [trialList, setTrialList] = useState<TrialData[]>([]);
+  const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
+  const [sessionData, setSessionData] = useState<Session | null>(null);
+  const [ready, setReady] = useState<boolean>(false);
   // const [showInstructions, setShowInstructions] = useState<any>(false);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
 
@@ -29,15 +34,15 @@ const TaskPage = () => {
     })();
   }, []);
 
-  const loadBins = async (set: number) => {
-    const fileName = `Set${set}_bins.txt`;
+  const loadBins = useCallback(async (setNumber: number): Promise<number[]> => {
+    const fileName = `Set${setNumber}_bins.txt`;
     const encodedFileName = encodeURIComponent(fileName);
     const text = await (await fetch(encodedFileName)).text();
     return text.trim().split('\n').map((line) => Number(line.split('\t')[1]));
-  };
+  }, []);
 
   // Load the json res for the specific trial
-  const loadResources = async (taskType: TaskType) => {
+  const loadResources = useCallback(async (taskType: TaskType) => {
     try {
       // Currently randomizing the sets: will also work for different jsOrders TaskTypes in the future
       const maxSet = 6;
@@ -50,10 +55,10 @@ const TaskPage = () => {
       const loadedBins = await loadBins(set);
       const filePath = `/jsOrders/cMST_${taskType}_orders_${set}_1_${shuffle}.json`; // Current filepath naming scheme
       const res = await fetch(filePath);
-      const data = await res.json();
+      const data: RawTrial[] = await res.json();
 
       // Normalize the file name
-      const norm = data.map((trial: any, index: number) => ({
+      const norm: TrialData[] = data.map((trial, index) => ({
         ...trial,
         image: trial.image.replace(/Set\s*1_rs/i, `Set${set}_rs`).replace(/\s+/g, ''),
         set,
@@ -63,7 +68,7 @@ const TaskPage = () => {
       setTrialList(norm);
     }
     catch (e) { console.error('Error loading JS orders: ', e); }
-  };
+  }, [loadBins]);
 
   // Start experiment
   const startExperiment = () => {
@@ -72,7 +77,7 @@ const TaskPage = () => {
     const jsPsych = jsPsychPlugins.initJsPsych({
       display_element: 'jspsych-target',
       on_finish: () => { saveData(jsPsych.data.get().json()); }
-    });
+    } as Parameters<JsPsychInit>[0]);
 
     const timeline = [
       {
@@ -86,7 +91,7 @@ const TaskPage = () => {
         choices: ['Old', 'Similar', 'New'],
         prompt: `<p>Did you see this before? Is it Old, Similar, or New?</p>`,
         data: trial,
-        on_finish: (data: any) => {
+        on_finish: (data: { response: number }) => {
           const labels = ['Old', 'Similar', 'New'];
           console.log({
             trial: trial.trial,
@@ -113,18 +118,18 @@ const TaskPage = () => {
     await fetch('/api/saveData', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: `log_${Date.now()}_Set${currentSet}.json`, content: prettified })
+      body: JSON.stringify({ filename: `log_${Date.now()}_Set${currentSet ?? 'NA'}.json`, content: prettified })
     });
   };
 
-  useEffect(() => { if (ready) { loadResources('Flatx2'); }}, [ready]);
+  useEffect(() => { if (ready) { loadResources('Flatx2'); } }, [ready, loadResources]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "2rem" }}>
       {!ready && (
         <SetupComponent
-          setSessionData={setSessionData}
-          setReadyToStart={() => setReady(true)}
+          setSessionData={(session) => setSessionData(session)}
+          setReadyToStart={(isReady) => setReady(isReady)}
         />
       )}
 
