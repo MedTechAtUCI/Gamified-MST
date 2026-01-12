@@ -1,0 +1,9 @@
+.taskPageContainer {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.taskPageButton {
+  font-size: 1.25rem;
+  margin-top: 1rem;
+}
