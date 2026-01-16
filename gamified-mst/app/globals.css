@@ -24,3 +24,107 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+
+
+/* new css code for page.tsx */
+
+/* ---------- Title Screen ---------- */
+
+.titleScreen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+/* Sky */
+.sky {
+  position: absolute;
+  top: 0;
+  height: 70%;
+  width: 100%;
+  background: linear-gradient(to bottom, #87ceeb, #e3f6ff);
+}
+
+/* Grass */
+.grass {
+  position: absolute;
+  bottom: 0;
+  height: 30%;
+  width: 100%;
+  background: #4caf50;
+}
+
+/* Title */
+.titleText {
+  position: absolute;
+  top: 5%;
+  width: 100%;
+  text-align: center;
+  font-size: 3rem;
+  color: white;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+}
+
+/* Anteater Placeholder */
+.anteater {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  animation: walk 2s ease-in-out infinite alternate;
+}
+
+.anteaterHead {
+  width: 40px;
+  height: 40px;
+  background: #8d6e63;
+  border-radius: 50%;
+}
+
+.anteaterBody {
+  width: 80px;
+  height: 40px;
+  background: #a1887f;
+  border-radius: 20px;
+  margin-left: 6px;
+}
+
+/* Buttons */
+.menuButtons {
+  position: absolute;
+  bottom: 6%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.menuButtons button {
+  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  background: #ffca28;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.menuButtons button:hover {
+  transform: scale(1.1);
+}
+
+/* Walking animation */
+@keyframes walk {
+  from {
+    transform: translateX(-60px);
+  }
+  to {
+    transform: translateX(60px);
+  }
+}

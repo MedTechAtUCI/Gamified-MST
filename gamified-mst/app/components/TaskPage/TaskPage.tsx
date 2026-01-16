@@ -1,75 +1,97 @@
 'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import SetupComponent, { Session } from "@/app/setup";
+import { useCallback, useEffect, useState } from 'react';
+import SetupComponent, { Session } from '@/app/setup';
 import {
   TaskType,
   JsPsychBundle,
   JsPsychInit,
   RawTrial,
   TrialData,
-} from "@/app/types/mst";
+} from '@/app/types/mst';
 
 import 'jspsych/css/jspsych.css';
 
-const TaskPage = () => {
+type TaskPageProps = {
+  taskType: TaskType;
+};
+
+const TaskPage = ({ taskType }: TaskPageProps) => {
   const [trialList, setTrialList] = useState<TrialData[]>([]);
   const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
   const [ready, setReady] = useState<boolean>(false);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
 
+  /* ---------------- Load jsPsych plugins ---------------- */
+
   useEffect(() => {
     (async () => {
-      const jspsych = await import("jspsych");
+      const jspsych = await import('jspsych');
       setJsPsychPlugins({
         initJsPsych: jspsych.initJsPsych,
-        preload: (await import("@jspsych/plugin-preload")).default,
-        htmlButtonResponse: (await import("@jspsych/plugin-html-button-response")).default,
-        imageButtonResponse: (await import("@jspsych/plugin-image-button-response")).default,
+        preload: (await import('@jspsych/plugin-preload')).default,
+        htmlButtonResponse: (await import('@jspsych/plugin-html-button-response')).default,
+        imageButtonResponse: (await import('@jspsych/plugin-image-button-response')).default,
       });
     })();
   }, []);
+
+  /* ---------------- Load bins ---------------- */
 
   const loadBins = useCallback(async (setNumber: number): Promise<number[]> => {
     const fileName = `Set${setNumber}_bins.txt`;
     const encodedFileName = encodeURIComponent(fileName);
     const text = await (await fetch(encodedFileName)).text();
-    return text.trim().split('\n').map((line) => Number(line.split('\t')[1]));
+    return text
+      .trim()
+      .split('\n')
+      .map((line) => Number(line.split('\t')[1]));
   }, []);
 
-  const loadResources = useCallback(async (taskType: TaskType) => {
-    try {
-      const maxSet = 6;
-      const maxShuffle = 2;
+  /* ---------------- Load task resources ---------------- */
 
-      const set = Math.floor(Math.random() * maxSet) + 1;
-      const shuffle = Math.floor(Math.random() * maxShuffle) + 1;
-      setCurrentSet(set);
+  const loadResources = useCallback(
+    async (task: TaskType) => {
+      try {
+        const maxSet = 6;
+        const maxShuffle = 2;
 
-      const loadedBins = await loadBins(set);
-      const filePath = `/jsOrders/cMST_${taskType}_orders_${set}_1_${shuffle}.json`;
-      const res = await fetch(filePath);
-      const data: RawTrial[] = await res.json();
+        const set = Math.floor(Math.random() * maxSet) + 1;
+        const shuffle = Math.floor(Math.random() * maxShuffle) + 1;
+        setCurrentSet(set);
 
-      const norm: TrialData[] = data.map((trial, index) => ({
-        ...trial,
-        image: trial.image.replace(/Set\s*1_rs/i, `Set${set}_rs`).replace(/\s+/g, ''),
-        set,
-        bin: loadedBins[index]
-      }));
+        const loadedBins = await loadBins(set);
+        const filePath = `/jsOrders/cMST_${task}_orders_${set}_1_${shuffle}.json`;
 
-      setTrialList(norm);
-    }
-    catch (e) { console.error('Error loading JS orders: ', e); }
-  }, [loadBins]);
+        const res = await fetch(filePath);
+        const data: RawTrial[] = await res.json();
+
+        const normalized: TrialData[] = data.map((trial, index) => ({
+          ...trial,
+          image: trial.image
+            .replace(/Set\s*1_rs/i, `Set${set}_rs`)
+            .replace(/\s+/g, ''),
+          set,
+          bin: loadedBins[index],
+        }));
+
+        setTrialList(normalized);
+      } catch (e) {
+        console.error('Error loading JS orders:', e);
+      }
+    },
+    [loadBins]
+  );
+
+  /* ---------------- Start experiment ---------------- */
 
   const startExperiment = () => {
     if (!trialList.length || !jsPsychPlugins || !sessionData) return;
 
     const jsPsych = jsPsychPlugins.initJsPsych({
       display_element: 'jspsych-target',
-      on_finish: () => { saveData(jsPsych.data.get().json()); }
+      on_finish: () => saveData(jsPsych.data.get().json()),
     } as Parameters<JsPsychInit>[0]);
 
     const timeline = [
@@ -106,16 +128,30 @@ const TaskPage = () => {
     jsPsych.run(timeline);
   };
 
+  /* ---------------- Save data ---------------- */
+
   const saveData = async (data: string) => {
     const prettified = JSON.stringify(JSON.parse(data), null, 2);
+
     await fetch('/api/saveData', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: `log_${Date.now()}_Set${currentSet ?? 'NA'}.json`, content: prettified })
+      body: JSON.stringify({
+        filename: `log_${Date.now()}_Set${currentSet ?? 'NA'}.json`,
+        content: prettified,
+      }),
     });
   };
 
-  useEffect(() => { if (ready) { loadResources('Flatx2'); } }, [ready, loadResources]);
+  /* ---------------- Auto-load once ready ---------------- */
+
+  useEffect(() => {
+    if (ready) {
+      loadResources(taskType);
+    }
+  }, [ready, loadResources, taskType]);
+
+  /* ---------------- Render ---------------- */
 
   return (
     <div className="taskPageContainer">
@@ -126,13 +162,13 @@ const TaskPage = () => {
         />
       )}
 
-      <div id="jspsych-target"></div>
+      <div id="jspsych-target" />
 
       {ready && (
         <button
           id="continueButton"
           className="taskPageButton"
-          onClick={() => loadResources('Flatx2').then(startExperiment)}
+          onClick={() => loadResources(taskType).then(startExperiment)}
         >
           Start Task
         </button>
