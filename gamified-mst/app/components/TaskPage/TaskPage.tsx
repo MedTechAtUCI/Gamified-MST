@@ -11,12 +11,14 @@ import {
 } from "@/app/types/mst";
 
 import 'jspsych/css/jspsych.css';
+import './TaskPage.css';
 
 const TaskPage = () => {
   const [trialList, setTrialList] = useState<TrialData[]>([]);
   const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
   const [ready, setReady] = useState<boolean>(false);
+  const [running, setRunning] = useState<boolean>(false);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
 
   useEffect(() => {
@@ -82,8 +84,16 @@ const TaskPage = () => {
         type: jsPsychPlugins.imageButtonResponse,
         stimulus: `/img/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
-        prompt: `<p>Did you see this before? Is it Old, Similar, or New?</p>`,
+        prompt: `<p>Have you seen this before? Is it Old, Similar, or New?</p>`,
         data: trial,
+        on_start: () => {
+          const target = document.getElementById('jspsych-target');
+          if (target) {
+            target.classList.remove('jspsych-book--flip');
+            void target.offsetWidth;
+            target.classList.add('jspsych-book--flip');
+          }
+        },
         on_finish: (data: { response: number }) => {
           const labels = ['Old', 'Similar', 'New'];
           console.log({
@@ -104,6 +114,7 @@ const TaskPage = () => {
     ];
 
     jsPsych.run(timeline);
+    setRunning(true);
   };
 
   const saveData = async (data: string) => {
@@ -126,9 +137,9 @@ const TaskPage = () => {
         />
       )}
 
-      <div id="jspsych-target"></div>
+      <div id="jspsych-target" className="jspsych-book"></div>
 
-      {ready && (
+      {ready && !running && (
         <button
           id="continueButton"
           className="taskPageButton"
