@@ -1,5 +1,7 @@
-import TaskPage from "@/app/components/TaskPage/TaskPage";
+'use client';
 
-const Page = () => <TaskPage />;
+import TitlePage from './components/TitlePage/TitlePage';
 
-export default Page;
+export default function Page() {
+    return <TitlePage />
+}
