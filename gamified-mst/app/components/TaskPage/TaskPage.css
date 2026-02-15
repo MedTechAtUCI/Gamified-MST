@@ -7,3 +7,154 @@
   font-size: 1.25rem;
   margin-top: 1rem;
 }
+
+.jspsych-book {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  --sprite-image: url('../../images/book.webp');
+  --sprite-c: 5;
+  --sprite-h: clamp(1000, calc(400vw / 1px), 5000);
+  --sprite-w: calc(var(--sprite-h) * 3.2);
+  --sprite-f: 7;
+  --sprite-anim-f: 6;
+  --sprite-fr: 12;
+  --sprite-as: calc(var(--sprite-anim-f) / var(--sprite-fr) * 1s);
+  --sprite-r: round(up, calc(var(--sprite-f) / var(--sprite-c)), 1);
+  --sprite-sh: calc(var(--sprite-h) / var(--sprite-r));
+  --sprite-th: calc(var(--sprite-sh) / 2);
+  --sprite-ar: calc(var(--sprite-th) / var(--sprite-sh));
+  --sprite-uh: calc(var(--sprite-h) * var(--sprite-ar));
+  --sprite-uw: calc(var(--sprite-w) * var(--sprite-ar));
+  --sprite-tw: calc(var(--sprite-uw) / var(--sprite-c));
+}
+
+@property --sprite-fs {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: true;
+}
+
+.jspsych-book .jspsych-content {
+  width: calc(1px * (var(--sprite-tw) * 0.7042));
+  height: calc(1px * (var(--sprite-th) * 0.6107));
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: center;
+  padding: clamp(1.5rem, 3vw, 3rem) clamp(2rem, 4vw, 4.5rem);
+  background: transparent;
+  overflow: hidden;
+  color: #1a1a1a;
+}
+
+.jspsych-book .jspsych-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: calc(-1px * calc((var(--sprite-th) - (var(--sprite-th) * 0.6107)) / 2)) calc(-1px * calc((var(--sprite-tw) - (var(--sprite-tw) * 0.7042)) / 2));
+  background-image: var(--sprite-image);
+  background-repeat: no-repeat;
+  background-size: calc(1px * var(--sprite-uw)) calc(1px * var(--sprite-uh));
+  --sprite-fs-n: mod(var(--sprite-fs), var(--sprite-f));
+  --row: calc(round(down, calc(calc(var(--sprite-tw) * var(--sprite-fs-n)) / var(--sprite-uw)), 1) * var(--sprite-th));
+  --col: mod(calc(var(--sprite-tw) * var(--sprite-fs-n)), var(--sprite-uw));
+  background-position: calc(-1px * var(--col)) calc(-1px * var(--row));
+  z-index: -10;
+  pointer-events: none;
+}
+
+.jspsych-book--flip .jspsych-content::before {
+  animation: book-flip var(--sprite-as) steps(var(--sprite-anim-f)) 1 both;
+}
+
+.jspsych-book .jspsych-image-button-response-stimulus,
+.jspsych-book .jspsych-image-button-response-button-container,
+.jspsych-book .jspsych-image-button-response-prompt {
+  margin: 0;
+  z-index: 1;
+}
+
+.jspsych-book .jspsych-image-button-response-stimulus {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.jspsych-book .jspsych-image-button-response-stimulus img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.jspsych-book .jspsych-image-button-response-button-container {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+  justify-content: center;
+  padding-left: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.jspsych-book .jspsych-image-button-response-button-container .jspsych-btn {
+  font-size: 1.1rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.jspsych-book .jspsych-image-button-response-prompt {
+  grid-column: 1;
+  align-self: end;
+  text-align: left;
+  font-size: 1rem;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.jspsych-book .jspsych-html-button-response-stimulus,
+.jspsych-book .jspsych-html-button-response-button-container {
+  grid-column: 1 / -1;
+  text-align: center;
+  z-index: 1;
+}
+
+.jspsych-book .jspsych-html-button-response-button-container .jspsych-btn {
+  font-size: 1.1rem;
+  padding: 0.9rem 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 900px) {
+  .jspsych-book .jspsych-content {
+    grid-template-columns: 1fr;
+    row-gap: 1.5rem;
+  }
+
+  .jspsych-book .jspsych-image-button-response-stimulus,
+  .jspsych-book .jspsych-image-button-response-button-container,
+  .jspsych-book .jspsych-image-button-response-prompt {
+    grid-column: 1;
+  }
+}
+
+@keyframes book-flip {
+  from {
+    --sprite-fs: 1;
+  }
+
+  to {
+    --sprite-fs: 6;
+  }
+}
