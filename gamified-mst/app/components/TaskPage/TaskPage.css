@@ -158,3 +158,14 @@
     --sprite-fs: 6;
   }
 }
+
+/* Fade images out after 2 seconds */
+#jspsych-image-button-response-stimulus {
+  animation: fade-out 0.5s ease-in-out 2s forwards;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
