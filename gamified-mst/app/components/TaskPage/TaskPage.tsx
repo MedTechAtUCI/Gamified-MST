@@ -162,6 +162,12 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
     }
   }, [ready, loadResources, taskType]);
 
+  useEffect(() => {
+    if (ready && jsPsychPlugins && trialList.length && !running) {
+      startExperiment();
+    }
+  }, [ready, jsPsychPlugins, trialList, running]);
+
   /* ---------------- Render ---------------- */
 
   return (
@@ -174,16 +180,6 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
       )}
 
       <div id="jspsych-target" className="jspsych-book"></div>
-
-      {ready && !running && (
-        <button
-          id="continueButton"
-          className="taskPageButton"
-          onClick={() => loadResources(taskType).then(startExperiment)}
-        >
-          Start Task
-        </button>
-      )}
     </div>
   );
 };

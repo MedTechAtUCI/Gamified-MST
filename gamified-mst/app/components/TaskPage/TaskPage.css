@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap');
+
 .taskPageContainer {
   text-align: center;
   margin-top: 2rem;
@@ -108,7 +110,10 @@
   border-radius: 0.75rem;
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
 .jspsych-book .jspsych-image-button-response-prompt {
@@ -159,13 +164,73 @@
   }
 }
 
-/* Fade images out after 2 seconds */
+@keyframes book-flip {
+  from {
+    --sprite-fs: 1;
+  }
+
+  to {
+    --sprite-fs: 6;
+  }
+}
+
 #jspsych-image-button-response-stimulus {
-  animation: fade-out 0.5s ease-in-out 2s forwards;
+  opacity: 0;
+  animation: 
+    fade-in 1s ease-in-out 0.5s forwards, 
+    fade-out 0.5s ease-in-out 3.0s forwards;
+
+  border-radius: 28px;
+  border: 10px solid #e5b686;
+  background-color: #fdfdfd;
+
+  box-shadow: 
+    2px 3px 4px rgba(0, 0, 0, 0.15), 
+    6px 8px 12px rgba(0, 0, 0, 0.12)
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes fade-out {
-  to {
-    opacity: 0;
-  }
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.jspsych-book .jspsych-btn {
+  all: unset;
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 10px auto !important;
+  padding: 15px 25px !important;
+  
+  background: linear-gradient(to bottom, #f4ede4, #e2d1ba) !important;
+  color: #3d2610 !important;
+  border: 3px solid #5d3a1a !important;
+  border-radius: 20px !important;
+  
+  font-family: var(--font-nunito) !important;
+  font-weight: 900 !important;
+  font-size: 1.2rem !important;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+
+  box-shadow: 0 5px 0px #3d2610, 0 8px 15px rgba(0,0,0,0.2) !important;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.jspsych-book .jspsych-btn:hover {
+  background: #fdfaf5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0px #3d2610, 0 10px 20px rgba(0,0,0,0.2) !important;
+}
+
+.jspsych-book .jspsych-btn:active {
+  transform: translateY(4px) !important;
+  box-shadow: 0 1px 0px #3d2610, 0 2px 5px rgba(0,0,0,0.2) !important;
 }
