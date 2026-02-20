@@ -9,6 +9,7 @@ import {
   RawTrial,
   TrialData,
 } from '@/app/types/mst';
+import CharacterView from './CharacterView';
 
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
@@ -179,7 +180,10 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
         />
       )}
 
-      <div id="jspsych-target" className="jspsych-book"></div>
+      <div className="book-wrapper" style={{ position: 'relative', margin: '0 auto' }}>
+        <CharacterView />
+        <div id="jspsych-target" className="jspsych-book"></div>
+      </div>
     </div>
   );
 };

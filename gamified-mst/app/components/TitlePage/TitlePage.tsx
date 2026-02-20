@@ -10,11 +10,9 @@ import peterAnteater from '../../images/anteater/peter_anteater.png';
 import startBtn from '../../images/start_screen/buttons/start_button.png';
 import settingsBtn from '../../images/start_screen/buttons/settings_button.png';
 import soundOnBtn from '../../images/start_screen/buttons/sound_on_button.png';
-import { useState } from 'react';
 
 export default function TitlePage() {
   const router = useRouter();
-  const [showDialogue, setShowDialogue] = useState(false);
 
 return (
     <div className="scene">

@@ -6,7 +6,7 @@ const STEPS = [
   "Hey, I'm Peter! Welcome to my game, Peter's Adventure!",
   "I'll show you some photos from my latest trip. If you've seen one already, mark it 'Old' - If it's brand new, mark it 'New'!",
   "Watch out for tricks! If a picture looks almost the same but has tiny changes, mark it 'Similar.'",
-  "Ready to test your memory? Click 'START' and let's get exploring!"
+  "Ready to test your memory? Click 'START GAME' and let's get exploring!"
 ];
 export default function PeterDialogue({ children }: { children: React.ReactNode }) {
   const [index, setIndex] = useState(-1);
