@@ -31,7 +31,7 @@ return (
         <img src={peterAnteater.src} className="petr" alt="Peter" />
       </PeterDialogue>
 
-      <button className="startButton" onClick={() => router.push('/task?mode=Flatx2')}>
+      <button className="startButton" onClick={() => router.push('/task?mode=Flatx2&test=true')}>
         <img src={startBtn.src} alt="START" />
       </button>
     </div>

@@ -13,6 +13,7 @@ import CharacterView from './CharacterView';
 
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
+import { sendMetrics } from '@/app/utils/SendMetrics';
 
 type TaskPageProps = {
   taskType: TaskType;
@@ -79,7 +80,15 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
           bin: loadedBins[index],
         }));
 
-        setTrialList(normalized);
+        /* Testing */
+
+        const params = new URLSearchParams(window.location.search);
+        const isTest = params.get('test') === 'true';
+        const finalTrialList = isTest ? normalized.slice(0, 5) : normalized;
+
+        /* --------*/
+
+        setTrialList(finalTrialList);
       } catch (e) {
         console.error('Error loading JS orders:', e);
       }
@@ -94,7 +103,6 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
 
     const jsPsych = jsPsychPlugins.initJsPsych({
       display_element: 'jspsych-target',
-      on_finish: () => saveData(jsPsych.data.get().json()),
     } as Parameters<JsPsychInit>[0]);
 
     const timeline = [
@@ -131,8 +139,22 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
 
       {
         type: jsPsychPlugins.htmlButtonResponse,
-        stimulus: `<p>Thank you for completing the task.</p>`,
+        stimulus: `<p>Saving your results, please wait...</p>`,
+        choices: [],
+        on_load: async () => {
+          const data = jsPsych.data.get().json();
+          await saveData(data);
+          jsPsych.finishTrial(); 
+        }
+      },
+
+      {
+        type: jsPsychPlugins.htmlButtonResponse,
+        stimulus: `<p>Thank you for completing the task. You can now return to the home page.</p>`,
         choices: ['Finish'],
+        on_finish: () => {
+          window.location.href = '/';
+        }
       },
     ];
 
@@ -143,16 +165,16 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   /* ---------------- Save data ---------------- */
 
   const saveData = async (data: string) => {
-    const prettified = JSON.stringify(JSON.parse(data), null, 2);
+    const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
+    console.log('Experiment finished. Sending metrics...');
 
-    await fetch('/api/saveData', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: `log_${Date.now()}_Set${currentSet ?? 'NA'}.json`,
-        content: prettified,
-      }),
-    });
+    try {
+      await sendMetrics(data, sessionData, AWS_API_GATEWAY || '');
+      console.log('Metrics saved.');
+    }
+    catch (e) {
+      console.error('Failed to save data:', e);
+    }
   };
 
   /* ---------------- Auto-load once ready ---------------- */
