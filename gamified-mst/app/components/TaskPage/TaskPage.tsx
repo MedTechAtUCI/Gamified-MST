@@ -71,14 +71,19 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
         const res = await fetch(filePath);
         const data: RawTrial[] = await res.json();
 
-        const normalized: TrialData[] = data.map((trial, index) => ({
-          ...trial,
-          image: trial.image
-            .replace(/Set\s*1_rs/i, `Set${set}_rs`)
-            .replace(/\s+/g, ''),
-          set,
-          bin: loadedBins[index],
-        }));
+        const normalized: TrialData[] = data.map((trial, index) => {
+          const cleanFileName = trial.image
+            .replace(/^Set\s*\d+(_rs)?\//i, '')
+            .replace(/\s+/g, '');
+          const finalPath = `Set${set}/${cleanFileName}`;
+
+          return {
+            ...trial,
+            image: finalPath,
+            set,
+            bin: loadedBins[index],
+          };
+        });
 
         /* Testing */
 
@@ -99,6 +104,8 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   /* ---------------- Start experiment ---------------- */
 
   const startExperiment = () => {
+    const IMAGE_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+
     if (!trialList.length || !jsPsychPlugins || !sessionData) return;
 
     const jsPsych = jsPsychPlugins.initJsPsych({
@@ -108,12 +115,12 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
     const timeline = [
       {
         type: jsPsychPlugins.preload,
-        images: trialList.map((t) => `/img/${encodeURI(t.image)}`),
+        images: trialList.map((t) => `${IMAGE_S3_BUCKET}/${encodeURI(t.image)}`),
       },
 
       ...trialList.map((trial) => ({
         type: jsPsychPlugins.imageButtonResponse,
-        stimulus: `/img/${encodeURI(trial.image)}`,
+        stimulus: `${IMAGE_S3_BUCKET}/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
         prompt: `<p>Have you seen this before? Is it Old, Similar, or New?</p>`,
         data: trial,
@@ -139,12 +146,14 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
 
       {
         type: jsPsychPlugins.htmlButtonResponse,
-        stimulus: `<p>Saving your results, please wait...</p>`,
+        stimulus: `<div id="saving-msg"><p>Saving your results, please wait...</p></div>`,
         choices: [],
         on_load: async () => {
           const data = jsPsych.data.get().json();
           await saveData(data);
-          jsPsych.finishTrial(); 
+          const msg = document.getElementById('saving-msg');
+          if (msg) msg.style.display = 'none';
+          jsPsych.finishTrial();
         }
       },
 
