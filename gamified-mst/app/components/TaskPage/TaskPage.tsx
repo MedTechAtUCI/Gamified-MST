@@ -9,9 +9,11 @@ import {
   RawTrial,
   TrialData,
 } from '@/app/types/mst';
+import CharacterView from './CharacterView';
 
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
+import { sendMetrics } from '@/app/utils/SendMetrics';
 
 type TaskPageProps = {
   taskType: TaskType;
@@ -69,16 +71,29 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
         const res = await fetch(filePath);
         const data: RawTrial[] = await res.json();
 
-        const normalized: TrialData[] = data.map((trial, index) => ({
-          ...trial,
-          image: trial.image
-            .replace(/Set\s*1_rs/i, `Set${set}_rs`)
-            .replace(/\s+/g, ''),
-          set,
-          bin: loadedBins[index],
-        }));
+        const normalized: TrialData[] = data.map((trial, index) => {
+          const cleanFileName = trial.image
+            .replace(/^Set\s*\d+(_rs)?\//i, '')
+            .replace(/\s+/g, '');
+          const finalPath = `Set${set}/${cleanFileName}`;
 
-        setTrialList(normalized);
+          return {
+            ...trial,
+            image: finalPath,
+            set,
+            bin: loadedBins[index],
+          };
+        });
+
+        /* Testing */
+
+        const params = new URLSearchParams(window.location.search);
+        const isTest = params.get('test') === 'true';
+        const finalTrialList = isTest ? normalized.slice(0, 5) : normalized;
+
+        /* --------*/
+
+        setTrialList(finalTrialList);
       } catch (e) {
         console.error('Error loading JS orders:', e);
       }
@@ -89,22 +104,23 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   /* ---------------- Start experiment ---------------- */
 
   const startExperiment = () => {
+    const IMAGE_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+
     if (!trialList.length || !jsPsychPlugins || !sessionData) return;
 
     const jsPsych = jsPsychPlugins.initJsPsych({
       display_element: 'jspsych-target',
-      on_finish: () => saveData(jsPsych.data.get().json()),
     } as Parameters<JsPsychInit>[0]);
 
     const timeline = [
       {
         type: jsPsychPlugins.preload,
-        images: trialList.map((t) => `/img/${encodeURI(t.image)}`),
+        images: trialList.map((t) => `${IMAGE_S3_BUCKET}/${encodeURI(t.image)}`),
       },
 
       ...trialList.map((trial) => ({
         type: jsPsychPlugins.imageButtonResponse,
-        stimulus: `/img/${encodeURI(trial.image)}`,
+        stimulus: `${IMAGE_S3_BUCKET}/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
         prompt: `<p>Have you seen this before? Is it Old, Similar, or New?</p>`,
         data: trial,
@@ -130,8 +146,24 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
 
       {
         type: jsPsychPlugins.htmlButtonResponse,
-        stimulus: `<p>Thank you for completing the task.</p>`,
+        stimulus: `<div id="saving-msg"><p>Saving your results, please wait...</p></div>`,
+        choices: [],
+        on_load: async () => {
+          const data = jsPsych.data.get().json();
+          await saveData(data);
+          const msg = document.getElementById('saving-msg');
+          if (msg) msg.style.display = 'none';
+          jsPsych.finishTrial();
+        }
+      },
+
+      {
+        type: jsPsychPlugins.htmlButtonResponse,
+        stimulus: `<p>Thank you for completing the task. You can now return to the home page.</p>`,
         choices: ['Finish'],
+        on_finish: () => {
+          window.location.href = '/';
+        }
       },
     ];
 
@@ -142,16 +174,16 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   /* ---------------- Save data ---------------- */
 
   const saveData = async (data: string) => {
-    const prettified = JSON.stringify(JSON.parse(data), null, 2);
+    const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
+    console.log('Experiment finished. Sending metrics...');
 
-    await fetch('/api/saveData', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: `log_${Date.now()}_Set${currentSet ?? 'NA'}.json`,
-        content: prettified,
-      }),
-    });
+    try {
+      await sendMetrics(data, sessionData, AWS_API_GATEWAY || '');
+      console.log('Metrics saved.');
+    }
+    catch (e) {
+      console.error('Failed to save data:', e);
+    }
   };
 
   /* ---------------- Auto-load once ready ---------------- */
@@ -161,6 +193,12 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
       loadResources(taskType);
     }
   }, [ready, loadResources, taskType]);
+
+  useEffect(() => {
+    if (ready && jsPsychPlugins && trialList.length && !running) {
+      startExperiment();
+    }
+  }, [ready, jsPsychPlugins, trialList, running]);
 
   /* ---------------- Render ---------------- */
 
@@ -173,17 +211,10 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
         />
       )}
 
-      <div id="jspsych-target" className="jspsych-book"></div>
-
-      {ready && !running && (
-        <button
-          id="continueButton"
-          className="taskPageButton"
-          onClick={() => loadResources(taskType).then(startExperiment)}
-        >
-          Start Task
-        </button>
-      )}
+      <div className="book-wrapper" style={{ position: 'relative', margin: '0 auto' }}>
+        <CharacterView />
+        <div id="jspsych-target" className="jspsych-book"></div>
+      </div>
     </div>
   );
 };
