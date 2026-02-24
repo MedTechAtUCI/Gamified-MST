@@ -45,6 +45,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: gamified-mst/build
+          publish_dir: gamified-mst/out
           publish_branch: Website_Deployment
           cname: mst.medtech-uci.com
