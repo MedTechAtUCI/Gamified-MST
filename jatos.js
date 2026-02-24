@@ -1,0 +1,1 @@
+window.jatos = { startStudy: () => console.log('JATOS startStudy called'), submitResult: () => console.log('JATOS submitResult called'), };
