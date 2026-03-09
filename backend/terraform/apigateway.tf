@@ -7,6 +7,12 @@ resource "aws_apigatewayv2_api" "metrics_api" {
   })
 }
 
+resource "aws_apigatewayv2_stage" "default" {
+  api_id      = aws_apigatewayv2_api.metrics_api.id
+  name        = "$default"
+  auto_deploy = true
+}
+
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
@@ -14,4 +20,8 @@ resource "aws_lambda_permission" "apigw_lambda" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.metrics_api.execution_arn}/*/*"
+}
+
+output "api_base_url" {
+  value = aws_apigatewayv2_api.metrics_api.api_endpoint
 }
