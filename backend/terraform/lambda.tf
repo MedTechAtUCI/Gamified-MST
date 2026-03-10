@@ -11,4 +11,10 @@ resource "aws_lambda_function" "metrics_writer" {
   handler          = "metrics_writer.lambda_handler"
   runtime          = "python3.13"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DYNAMO_TABLE = aws_dynamodb_table.metrics_table.name
+    }
+  }
 }
