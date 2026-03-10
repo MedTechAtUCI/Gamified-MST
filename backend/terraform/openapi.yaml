@@ -1,0 +1,29 @@
+openapi: "3.0.1"
+info:
+  title: "POST-API"
+  version: "2026-02-20"
+paths:
+  /metrics:
+    post:
+      responses:
+        default:
+          description: "Default response for POST /metrics"
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "${lambda_arn}"
+        connectionType: "INTERNET"
+x-amazon-apigateway-cors:
+  allowMethods:
+  - "OPTIONS"
+  - "POST"
+  allowHeaders:
+  - "authorization"
+  - "content-type"
+  - "x-api-key"
+  maxAge: 0
+  allowCredentials: false
+  allowOrigins:
+  - "*"
+x-amazon-apigateway-importexport-version: "1.0"
