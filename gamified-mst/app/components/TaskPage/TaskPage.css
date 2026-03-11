@@ -14,21 +14,8 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  --sprite-image: url('../../images/book.webp');
-  --sprite-c: 5;
-  --sprite-h: clamp(1000, calc(400vw / 1px), 5000);
-  --sprite-w: calc(var(--sprite-h) * 3.2);
-  --sprite-f: 7;
-  --sprite-anim-f: 6;
-  --sprite-fr: 12;
-  --sprite-as: calc(var(--sprite-anim-f) / var(--sprite-fr) * 1s);
-  --sprite-r: round(up, calc(var(--sprite-f) / var(--sprite-c)), 1);
-  --sprite-sh: calc(var(--sprite-h) / var(--sprite-r));
-  --sprite-th: calc(var(--sprite-sh) / 2);
-  --sprite-ar: calc(var(--sprite-th) / var(--sprite-sh));
-  --sprite-uh: calc(var(--sprite-h) * var(--sprite-ar));
-  --sprite-uw: calc(var(--sprite-w) * var(--sprite-ar));
-  --sprite-tw: calc(var(--sprite-uw) / var(--sprite-c));
+  overflow: visible;
+  /* Sprite vars are defined on .book-wrapper and inherited here */
 }
 
 @property --sprite-fs {
@@ -176,9 +163,7 @@
 
 #jspsych-image-button-response-stimulus {
   opacity: 0;
-  animation: 
-    fade-in 1s ease-in-out 0.5s forwards, 
-    fade-out 0.5s ease-in-out 3.0s forwards;
+  animation: img-sequence 3.5s ease-in-out 0.5s forwards;
 
   border-radius: 28px;
   border: 10px solid #e5b686;
@@ -189,6 +174,15 @@
     6px 8px 12px rgba(0, 0, 0, 0.12)
 }
 
+/* Single keyframe handles the full sequence (after 0.5s flip delay):
+   0.5s→1.5s fade in | 1.5s→3.5s hold visible | 3.5s→4s fade out */
+@keyframes img-sequence {
+  0%      { opacity: 0; }
+  28.57%  { opacity: 1; }
+  85.71%  { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -197,6 +191,15 @@
 @keyframes fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+.jspsych-book--btn-locked .jspsych-btn {
+  pointer-events: none !important;
+  opacity: 0.35 !important;
+  cursor: default !important;
+  filter: grayscale(40%);
+  transform: none !important;
+  box-shadow: 0 2px 0px #3d2610, 0 3px 6px rgba(0,0,0,0.1) !important;
 }
 
 .jspsych-book .jspsych-btn {
@@ -244,144 +247,28 @@
   justify-content: center;
   transform: scale(0.95);
   transform-origin: top center;
+
+  /* Sprite vars live here so .book-wrapper can size itself to match the book,
+     and the bookmark can position relative to the book's actual content area.
+     .jspsych-book and .jspsych-content inherit these automatically. */
+  --sprite-image: url('../../images/book.webp');
+  --sprite-c: 5;
+  --sprite-h: clamp(1000, calc(400vw / 1px), 5000);
+  --sprite-w: calc(var(--sprite-h) * 3.2);
+  --sprite-f: 7;
+  --sprite-anim-f: 6;
+  --sprite-fr: 12;
+  --sprite-as: calc(var(--sprite-anim-f) / var(--sprite-fr) * 1s);
+  --sprite-r: round(up, calc(var(--sprite-f) / var(--sprite-c)), 1);
+  --sprite-sh: calc(var(--sprite-h) / var(--sprite-r));
+  --sprite-th: calc(var(--sprite-sh) / 2);
+  --sprite-ar: calc(var(--sprite-th) / var(--sprite-sh));
+  --sprite-uh: calc(var(--sprite-h) * var(--sprite-ar));
+  --sprite-uw: calc(var(--sprite-w) * var(--sprite-ar));
+  --sprite-tw: calc(var(--sprite-uw) / var(--sprite-c));
+
+  /* Match the book's content area width exactly, so the bookmark's left: %
+     is always relative to the rendered book — not the viewport. */
+  width: calc(1px * (var(--sprite-tw) * 0.7042));
 }
 
-.style-bookmark {
-  position: absolute;
-  top: 0;
-  left: 23%;
-  width: 260px;
-  height: 0;
-  z-index: 2000;
-  background: #f4ede4;
-  border: 4px solid #5d3a1a;
-  border-top: none;
-  border-radius: 0 0 20px 20px;
-  transition: height 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-}
-
-.style-bookmark.open {
-  height: 440px;
-}
-
-.style-tab {
-  position: absolute;
-  top: -42px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 20px;
-  background: #a63d2d;
-  color: white;
-  border: 3px solid #5d3a1a;
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
-  font-family: var(--font-nunito);
-  font-weight: 900;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.jspsych-book {
-  overflow: visible !important;
-}
-
-.style-content {
-  padding: 20px 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-  width: 100%;
-}
-
-.style-bookmark.open .style-content {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.peter-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-.fashion-bubble {
-  background: #5d3a1a;
-  color: #f4ede4;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 15px;
-  position: relative;
-  width: 90%;
-}
-
-.bubble-arrow {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 10px;
-  height: 10px;
-  background: #5d3a1a;
-}
-
-.petr-shuffle {
-  width: 90px;
-  height: auto;
-  animation: shuffle 4s ease-in-out infinite;
-}
-
-@keyframes shuffle {
-  0%, 100% { transform: translateX(-4px) rotate(-1deg); }
-  50% { transform: translateX(4px) rotate(1deg); }
-}
-
-.cat-list {
-  width: 100%;
-  padding: 0 10px;
-}
-
-.cat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 12px;
-}
-
-.cat-name {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #5d3a1a;
-  margin-right: 20px;
-}
-
-.slot-box {
-  width: 32px;
-  height: 32px;
-  background: #e2d1ba;
-  border: 2px dashed #5d3a1a;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #5d3a1a;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.slot-box:hover {
-  background: #d8c3a9;
-}

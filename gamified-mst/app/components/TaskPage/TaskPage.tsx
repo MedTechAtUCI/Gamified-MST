@@ -10,6 +10,7 @@ import {
   TrialData,
 } from '@/app/types/mst';
 import CharacterView from './CharacterView';
+import Walkthrough from '../TitlePage/Walkthrough';
 
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
@@ -26,6 +27,8 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   const [ready, setReady] = useState<boolean>(false);
   const [running, setRunning] = useState<boolean>(false);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
+  const [walkthroughComplete, setWalkthroughComplete] = useState<boolean>(false);
+  const [prefetchDone, setPrefetchDone] = useState<boolean>(false);
 
   /* ---------------- Load jsPsych plugins ---------------- */
 
@@ -113,11 +116,6 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
     } as Parameters<JsPsychInit>[0]);
 
     const timeline = [
-      {
-        type: jsPsychPlugins.preload,
-        images: trialList.map((t) => `${IMAGE_S3_BUCKET}/${encodeURI(t.image)}`),
-      },
-
       ...trialList.map((trial) => ({
         type: jsPsychPlugins.imageButtonResponse,
         stimulus: `${IMAGE_S3_BUCKET}/${encodeURI(trial.image)}`,
@@ -130,6 +128,9 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
             target.classList.remove('jspsych-book--flip');
             void target.offsetWidth;
             target.classList.add('jspsych-book--flip');
+            // Lock buttons: 0.5s flip delay + 1s fade-in + 2s hold + 0.5s fade-out = 4s
+            target.classList.add('jspsych-book--btn-locked');
+            setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 4000);
           }
         },
         on_finish: (data: { response: number }) => {
@@ -186,6 +187,25 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
     }
   };
 
+  /* ---------------- Prefetch images during walkthrough ---------------- */
+
+  useEffect(() => {
+    if (!trialList.length) return;
+    const IMAGE_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+
+    let settled = 0;
+    const total = trialList.length;
+
+    trialList.forEach((t) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        settled++;
+        if (settled === total) setPrefetchDone(true);
+      };
+      img.src = `${IMAGE_S3_BUCKET}/${encodeURI(t.image)}`;
+    });
+  }, [trialList]);
+
   /* ---------------- Auto-load once ready ---------------- */
 
   useEffect(() => {
@@ -195,10 +215,10 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   }, [ready, loadResources, taskType]);
 
   useEffect(() => {
-    if (ready && jsPsychPlugins && trialList.length && !running) {
+    if (ready && walkthroughComplete && prefetchDone && jsPsychPlugins && trialList.length && !running) {
       startExperiment();
     }
-  }, [ready, jsPsychPlugins, trialList, running]);
+  }, [ready, walkthroughComplete, prefetchDone, jsPsychPlugins, trialList, running]);
 
   /* ---------------- Render ---------------- */
 
@@ -211,7 +231,11 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
         />
       )}
 
-      <div className="book-wrapper" style={{ position: 'relative', margin: '0 auto' }}>
+      {ready && !walkthroughComplete && (
+        <Walkthrough onComplete={() => setWalkthroughComplete(true)} />
+      )}
+
+      <div className="book-wrapper">
         <CharacterView />
         <div id="jspsych-target" className="jspsych-book"></div>
       </div>

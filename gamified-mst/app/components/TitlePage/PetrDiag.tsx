@@ -3,10 +3,10 @@
 import { useState } from 'react';
 
 const STEPS = [
-  "Hey, I'm Peter! Welcome to my game, Peter's Adventure!",
-  "I'll show you some photos from my latest trip. If you've seen one already, mark it 'Old' - If it's brand new, mark it 'New'!",
-  "Watch out for tricks! If a picture looks almost the same but has tiny changes, mark it 'Similar.'",
-  "Ready to test your memory? Click 'START GAME' and let's get exploring!"
+  "Zot Zot Zot! I'm Peter! I just got back from a huge trip!",
+  "I took a bunch of photos, but I think some might be duplicates... or even fakes!",
+  "Think you could help me sort them out?",
+  "Click that 'START GAME' button and let's get exploring!"
 ];
 export default function PeterDialogue({ children }: { children: React.ReactNode }) {
   const [index, setIndex] = useState(-1);

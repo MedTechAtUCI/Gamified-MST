@@ -1,0 +1,264 @@
+/* ---- Overlay ---- */
+
+.wt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  animation: wt-fade-in 0.25s ease;
+}
+
+@keyframes wt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Card ---- */
+
+.wt-card {
+  background: #f4ede4;
+  border: 4px solid #5d3a1a;
+  border-radius: 28px;
+  padding: 2rem 2.25rem;
+  max-width: 560px;
+  width: 92%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  animation: wt-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes wt-pop-in {
+  from { opacity: 0; transform: scale(0.88) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.wt-title {
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #e2d1ba;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #3d2610;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ---- Mock trial area ---- */
+
+.wt-mock-trial {
+  display: flex;
+  gap: 1.75rem;
+  align-items: center;
+  background: #fffdf8;
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid #e2d1ba;
+}
+
+.wt-mock-image {
+  width: 130px;
+  height: 130px;
+  background: #e2d1ba;
+  border-radius: 14px;
+  border: 2px solid #c9b89a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.wt-mock-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.wt-mock-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  background: linear-gradient(to bottom, #f4ede4, #e2d1ba);
+  color: #3d2610;
+  border: 3px solid #5d3a1a;
+  border-radius: 16px;
+  font-weight: 900;
+  font-size: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  opacity: 0.45;
+  box-shadow: 0 4px 0 #3d2610;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.wt-mock-btn:hover {
+  opacity: 0.7;
+}
+
+.wt-mock-btn--active {
+  opacity: 1;
+  background: linear-gradient(to bottom, #c04a36, #8c2c1c);
+  color: #fff;
+  border-color: #6e1e10;
+  transform: scale(1.07) translateY(-2px);
+  box-shadow: 0 7px 0 #4a1008, 0 10px 24px rgba(166, 61, 45, 0.4);
+}
+
+.wt-mock-btn--active:hover {
+  opacity: 1;
+}
+
+/* ---- Peter + speech bubble ---- */
+
+.wt-peter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.wt-bubble {
+  position: relative;
+  background: #fff;
+  border: 3px solid #5d3a1a;
+  border-radius: 18px;
+  padding: 12px 16px;
+  color: #3d2610;
+  font-size: 1rem;
+  line-height: 1.55;
+  flex: 1;
+}
+
+.wt-bubble p {
+  margin: 0;
+}
+
+/*
+  Arrow pointing right toward Peter.
+  ::before = outer triangle (border color, larger)
+  ::after  = inner triangle (fill color, smaller) — overlaps ::before to fake a border.
+
+  Math: outer at right:-14px with border-left:14px puts its flat side at bubble's right edge.
+        inner at right:-13px with border-left:10px puts its flat side 3px inside, creating the border effect.
+        Vertical centers match: outer bottom:18px + half-height 9px = 27px; inner bottom:21px + 6px = 27px.
+*/
+.wt-bubble::before,
+.wt-bubble::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.wt-bubble::before {
+  right: -14px;
+  bottom: 18px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 14px solid #5d3a1a;
+}
+
+.wt-bubble::after {
+  right: -13px;
+  bottom: 21px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid #fff;
+}
+
+.wt-peter-img {
+  height: 90px;
+  width: auto;
+  flex-shrink: 0;
+  animation: wt-bounce 2s ease-in-out infinite;
+}
+
+@keyframes wt-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ---- Footer ---- */
+
+.wt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wt-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.wt-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2d1ba;
+  border: 2px solid #5d3a1a;
+  transition: background 0.25s;
+}
+
+.wt-dot--active {
+  background: #5d3a1a;
+}
+
+/* ---- Buttons ---- */
+
+/* Base + primary style (Next / Let's Start) */
+.wt-btn {
+  padding: 12px 24px;
+  border-radius: 18px;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+  background: linear-gradient(to bottom, #c04a36, #8c2c1c);
+  color: #fff;
+  border: 3px solid #6e1e10;
+  box-shadow: 0 5px 0 #4a1008;
+}
+
+.wt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #4a1008;
+}
+
+.wt-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #4a1008;
+}
+
+/* Secondary style (Back) */
+.wt-btn--secondary {
+  background: linear-gradient(to bottom, #f4ede4, #e2d1ba);
+  color: #3d2610;
+  border-color: #5d3a1a;
+  box-shadow: 0 5px 0 #3d2610;
+}
+
+.wt-btn--secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #3d2610;
+}
+
+.wt-btn--secondary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #3d2610;
+}
+
+.wt-btn--secondary:disabled {
+  opacity: 0.3;
+  cursor: default;
+  transform: none;
+}
