@@ -48,3 +48,7 @@ next-env.d.ts
 
 # python
 venv/
+
+# extras
+.idea/
+package-lock.json
