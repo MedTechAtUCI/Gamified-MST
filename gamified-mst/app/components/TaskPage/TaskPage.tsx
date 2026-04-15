@@ -10,8 +10,10 @@ import {
   TrialData,
 } from '@/app/types/mst';
 import CharacterView from './CharacterView';
+import ProgressTimeline from './ProgressTimeline';
+import CompletionPanel from './CompletionPanel';
 import Walkthrough from '../TitlePage/Walkthrough';
-
+import { useGameState } from '@/app/hooks/useGameState';
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
 import { sendMetrics } from '@/app/utils/SendMetrics';
@@ -29,6 +31,41 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
   const [currentSet, setCurrentSet] = useState<number | null>(null);
   const [walkthroughComplete, setWalkthroughComplete] = useState<boolean>(false);
   const [prefetchDone, setPrefetchDone] = useState<boolean>(false);
+  const [outfitUnlockNotification, setOutfitUnlockNotification] = useState<{ show: boolean; outfit: number }>({ show: false, outfit: 0 });
+  const [completedTrials, setCompletedTrials] = useState(0); // Track completed trials to sync with gamestate
+  const [prevOutfitIndex, setPrevOutfitIndex] = useState(-1); // Track previous outfit to detect unlocks
+  const [showCompletion, setShowCompletion] = useState<boolean>(false); // Show completion panel at end
+
+  // Game state management
+  const NUM_OUTFITS = 4; // Number of anteater outfit stages
+  const gameState = useGameState(trialList.length);
+
+  // Sync completed trials with gamestate
+  useEffect(() => {
+    gameState.setCurrentLevel(Math.min(completedTrials, trialList.length - 1));
+  }, [completedTrials, trialList.length]);
+
+  // Check for outfit unlock when level changes
+  useEffect(() => {
+    const newOutfitIndex = gameState.getCurrentOutfitIndex(NUM_OUTFITS);
+    if (newOutfitIndex > prevOutfitIndex && prevOutfitIndex >= 0) {
+      // Delay showing notification until image loading phase (4s after trial starts)
+      setTimeout(() => {
+        setOutfitUnlockNotification({ show: true, outfit: newOutfitIndex + 1 });
+        setTimeout(() => {
+          setOutfitUnlockNotification({ show: false, outfit: 0 });
+        }, 2000);
+      }, 4000);
+    }
+    setPrevOutfitIndex(newOutfitIndex);
+  }, [gameState.currentLevel, prevOutfitIndex]);
+
+  // Save progress to persistent storage whenever trials are completed
+  useEffect(() => {
+    if (completedTrials > 0 && trialList.length > 0) {
+      const levelIndex = Math.min(completedTrials - 1, trialList.length - 1);
+    }
+  }, [completedTrials, trialList.length]);
 
   /* ---------------- Load jsPsych plugins ---------------- */
 
@@ -128,9 +165,9 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
             target.classList.remove('jspsych-book--flip');
             void target.offsetWidth;
             target.classList.add('jspsych-book--flip');
-            // Lock buttons: 0.5s flip delay + 1s fade-in + 2s hold + 0.5s fade-out = 4s
+            // Lock buttons for 1s
             target.classList.add('jspsych-book--btn-locked');
-            setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 4000);
+            setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 1000);
           }
         },
         on_finish: (data: { response: number }) => {
@@ -142,6 +179,9 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
             userResponse: labels[data.response],
             isCorrect: trial.correct_resp === data.response,
           });
+
+          // Increment completed trials counter to sync gamestate
+          setCompletedTrials((prev) => prev + 1);
         },
       })),
 
@@ -154,16 +194,8 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
           await saveData(data);
           const msg = document.getElementById('saving-msg');
           if (msg) msg.style.display = 'none';
+          setShowCompletion(true);
           jsPsych.finishTrial();
-        }
-      },
-
-      {
-        type: jsPsychPlugins.htmlButtonResponse,
-        stimulus: `<p>Thank you for completing the task. You can now return to the home page.</p>`,
-        choices: ['Finish'],
-        on_finish: () => {
-          window.location.href = '/';
         }
       },
     ];
@@ -236,9 +268,29 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
       )}
 
       <div className="book-wrapper">
-        <CharacterView />
+        <CharacterView currentOutfitIndex={gameState.getCurrentOutfitIndex(NUM_OUTFITS)} />
         <div id="jspsych-target" className="jspsych-book"></div>
       </div>
+
+      {ready && walkthroughComplete && (
+        <ProgressTimeline
+          currentLevel={gameState.currentLevel}
+          totalLevels={gameState.totalLevels}
+          currentOutfitIndex={gameState.getCurrentOutfitIndex(NUM_OUTFITS)}
+          totalOutfits={NUM_OUTFITS}
+        />
+      )}
+
+      {outfitUnlockNotification.show && (
+        <div className="outfit-unlock-banner">
+          <p>Outfit {outfitUnlockNotification.outfit} Unlocked!</p>
+        </div>
+      )}
+
+      <CompletionPanel 
+        isVisible={showCompletion} 
+        onFinish={() => window.location.href = '/'} 
+      />
     </div>
   );
 };

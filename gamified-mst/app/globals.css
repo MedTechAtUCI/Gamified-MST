@@ -26,6 +26,27 @@ body {
   font-family: var(--font-nunito);
   font-weight: 800; /* Sets the global "Bold" look */
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+img {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+}
+
+p, span, div, button, h1, h2, h3, h4, h5, h6 {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 

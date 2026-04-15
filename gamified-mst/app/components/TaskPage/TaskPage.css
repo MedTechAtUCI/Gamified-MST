@@ -1,8 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap');
-
 .taskPageContainer {
   text-align: center;
   margin-top: 2rem;
+  padding-bottom: 250px;
 }
 
 .taskPageButton {
@@ -107,9 +106,34 @@
   grid-column: 1;
   align-self: end;
   text-align: left;
-  font-size: 1rem;
-  color: #1a1a1a;
-  margin-bottom: 1rem;
+  font-size: 2.2rem !important;
+  color: #1a1a1a !important;
+  margin-bottom: 2.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.7 !important;
+}
+
+.jspsych-book .jspsych-image-button-response-prompt p,
+.jspsych-book .jspsych-image-button-response-prompt * {
+  font-size: 2.2rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  line-height: 1.7 !important;
+}
+
+#jspsych-content p {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 5rem !important;
+  line-height: 1.7 !important;
+}
+
+#jspsych-image-button-response-prompt {
+  font-size: 2.2rem !important;
+}
+
+#jspsych-image-button-response-prompt * {
+  font-size: 2.2rem !important;
 }
 
 .jspsych-book .jspsych-html-button-response-stimulus,
@@ -206,9 +230,9 @@
   all: unset;
   display: block;
   width: 100%;
-  max-width: 200px;
+  max-width: 240px;
   margin: 10px auto !important;
-  padding: 15px 25px !important;
+  padding: 20px 35px !important;
   
   background: linear-gradient(to bottom, #f4ede4, #e2d1ba) !important;
   color: #3d2610 !important;
@@ -217,7 +241,7 @@
   
   font-family: var(--font-nunito) !important;
   font-weight: 900 !important;
-  font-size: 1.2rem !important;
+  font-size: 1.5rem !important;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -270,5 +294,53 @@
   /* Match the book's content area width exactly, so the bookmark's left: %
      is always relative to the rendered book — not the viewport. */
   width: calc(1px * (var(--sprite-tw) * 0.7042));
+}
+
+/* ---- Outfit Unlock Banner ---- */
+
+.outfit-unlock-banner {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #c04a36, #a63d2d);
+  border: 3px solid #6e1e10;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: banner-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.outfit-unlock-banner p {
+  margin: 0;
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+@keyframes banner-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .outfit-unlock-banner {
+    top: 10px;
+    right: 10px;
+    padding: 0.75rem 1rem;
+  }
+
+  .outfit-unlock-banner p {
+    font-size: 0.9rem;
+  }
 }
 
