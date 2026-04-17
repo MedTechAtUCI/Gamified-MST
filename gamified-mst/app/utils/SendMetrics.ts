@@ -1,6 +1,18 @@
 import { Session } from '@/app/setup';
 
-export const sendMetrics = async ( JsPsychData: string, sessionData: Session | null, api: string) => {
+type ProlificData = {
+    prolificPID: string;
+    studyID: string;
+    sessionID: string;
+};
+
+export const sendMetrics = async ( 
+    JsPsychData: string, 
+    sessionData: Session | null, 
+    api: string, 
+    prolific: ProlificData
+) => {
+
     const trials = JSON.parse(JsPsychData).filter((t: any) => t.trial_type === 'image-button-response');
     const formattedData = trials.map((trial: any, index: number) => {
         const labels = ['Old', 'Similar', 'New'];
@@ -16,6 +28,9 @@ export const sendMetrics = async ( JsPsychData: string, sessionData: Session | n
             correct: trial.response === trial.correct_resp,
             reaction_time_ms: trial.rt,
             timestamp: new Date().toISOString(),
+            prolific_pid: prolific.prolificPID,
+            study_id: prolific.studyID,
+            session_id: prolific.sessionID,
         };
     });
 
