@@ -21,7 +21,7 @@ function TaskContent() {
   const sessionID = 
     (searchParams.get('SESSION_ID') as TaskType) ?? 'test';
 
-  return <TaskPage taskType={taskType} />;
+  return <TaskPage taskType={taskType} prolificPID={prolificPID} studyID={studyID} sessionID={sessionID} />;
 }
 
 export default function TaskRoutePage() {
