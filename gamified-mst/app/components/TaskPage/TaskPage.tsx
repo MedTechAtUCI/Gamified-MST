@@ -17,9 +17,12 @@ import { sendMetrics } from '@/app/utils/SendMetrics';
 
 type TaskPageProps = {
   taskType: TaskType;
+  prolificPID: string;
+  studyID: string;
+  sessionID: string;
 };
 
-const TaskPage = ({ taskType }: TaskPageProps) => {
+const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) => {
   const [trialList, setTrialList] = useState<TrialData[]>([]);
   const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
@@ -178,7 +181,11 @@ const TaskPage = ({ taskType }: TaskPageProps) => {
     console.log('Experiment finished. Sending metrics...');
 
     try {
-      await sendMetrics(data, sessionData, AWS_API_GATEWAY || '');
+      await sendMetrics(data, sessionData, AWS_API_GATEWAY || '', {
+        prolificPID,
+        studyID,
+        sessionID,
+      });
       console.log('Metrics saved.');
     }
     catch (e) {

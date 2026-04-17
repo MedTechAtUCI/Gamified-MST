@@ -11,6 +11,15 @@ function TaskContent() {
   // Read task type from URL (?mode=Flatx2)
   const taskType =
     (searchParams.get('mode') as TaskType) ?? 'Flatx2';
+    
+  const prolificPID = 
+    (searchParams.get('PROLIFIC_PID') as TaskType) ?? 'test';
+
+  const studyID = 
+    (searchParams.get('STUDY_ID') as TaskType) ?? 'test';
+
+  const sessionID = 
+    (searchParams.get('SESSION_ID') as TaskType) ?? 'test';
 
   return <TaskPage taskType={taskType} />;
 }
