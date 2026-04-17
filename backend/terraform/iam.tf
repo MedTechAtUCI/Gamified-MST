@@ -21,7 +21,7 @@ resource "aws_iam_role_policy" "lambda_permissions" {
     Version = "2012-10-17"
     Statement = [
       {
-        # Manage DynamoDB
+        # Manage DynamoDB for both tables
         Effect = "Allow"
         Action = [
           "dynamodb:PutItem",
@@ -29,7 +29,10 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
-        Resource = aws_dynamodb_table.metrics_table.arn
+        Resource = [
+          aws_dynamodb_table.metrics_table.arn,
+          aws_dynamodb_table.user_state_table.arn
+        ]
       },
       {
         # Debug logs
