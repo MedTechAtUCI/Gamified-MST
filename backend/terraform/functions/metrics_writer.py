@@ -4,6 +4,7 @@ import boto3
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TABLE_NAME"])
+state_table = dynamodb.Table(os.environ["USER_STATE_TABLE"])
 
 
 def lambda_handler(event, context):
@@ -42,6 +43,20 @@ def lambda_handler(event, context):
                 }
 
                 batch.put_item(Item=item)
+
+        # Update state of game level
+        user_id = payload.get("user_id")
+        session_id = payload.get("session_id")
+        curr_level = payload.get("current_level")
+        game_set = payload.get("set")
+        week_of_study = payload.get("game_week")
+
+        if user_id and session_id and curr_level and week_of_study:
+            state_table.update_item(
+                Key={"userId": user_id, "sessionId": session_id},
+                UpdateExpression="SET current_level = :lvl, week_of_study = :week, game_set = :set",
+                ExpressionAttributeValues={":lvl": curr_level, ":week": week_of_study, ":set": game_set}
+            )
 
         return {
             "statusCode": 200,
