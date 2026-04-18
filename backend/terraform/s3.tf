@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "gamified_mst" {
-  bucket = "gamified-mst"
+  bucket = "gamified-mst-prod"
 }
 
 # Enable versioning for safety
@@ -11,16 +11,6 @@ resource "aws_s3_bucket_versioning" "gamified_mst_versioning" {
   }
 }
 
-# Block public access by default
-resource "aws_s3_bucket_public_access_block" "gamified_mst_pab" {
-  bucket = aws_s3_bucket.gamified_mst.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
 # CORS configuration
 resource "aws_s3_bucket_cors_configuration" "gamified_mst_cors" {
   bucket = aws_s3_bucket.gamified_mst.id
@@ -28,7 +18,7 @@ resource "aws_s3_bucket_cors_configuration" "gamified_mst_cors" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET"]
-    allowed_origins = ["https://mst.medtech-uci.com/"]
+    allowed_origins = ["http://localhost:3000", "https://mst.medtech-uci.com/"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3600
   }

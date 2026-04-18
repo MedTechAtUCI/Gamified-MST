@@ -50,7 +50,7 @@ resource "aws_lambda_function" "user_state_handler" {
   filename         = data.archive_file.user_state_zip.output_path
   function_name    = "user-state-handler"
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "user_state_handler.lambda_handler"
+  handler          = "user_state.lambda_handler"
   runtime          = "python3.13"
   source_code_hash = data.archive_file.user_state_zip.output_base64sha256
 

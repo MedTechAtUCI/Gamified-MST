@@ -48,11 +48,12 @@ resource "aws_iam_group" "mst_developers" {
   name = "MST_Developers"
 }
 
-resource "aws_iam_group_membership" "mst_group_members" {
-  name  = "mst_group_members"
-  users = var.dev_users
-  group = aws_iam_group.mst_developers.name
-}
+# Group membership commented out - add users manually after creating IAM accounts
+# resource "aws_iam_group_membership" "mst_group_members" {
+#   name  = "mst_group_members"
+#   users = var.dev_users
+#   group = aws_iam_group.mst_developers.name
+# }
 
 resource "aws_iam_policy" "mst_developer_policy" {
   name        = "mst_developer_policy"
