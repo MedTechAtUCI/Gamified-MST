@@ -17,6 +17,7 @@ import { useGameState } from '@/app/hooks/useGameState';
 import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
 import { sendMetrics } from '@/app/utils/SendMetrics';
+import { fetchUserState, UserState } from '@/app/utils/FetchUserState';
 
 type TaskPageProps = {
   taskType: TaskType;
@@ -38,8 +39,28 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
   const [completedTrials, setCompletedTrials] = useState(0); // Track completed trials to sync with gamestate
   const [prevOutfitIndex, setPrevOutfitIndex] = useState(-1); // Track previous outfit to detect unlocks
   const [showCompletion, setShowCompletion] = useState<boolean>(false); // Show completion panel at end
+  const [userState, setUserState] = useState<UserState | null>(null);
+  const [userStateLoading, setUserStateLoading] = useState<boolean>(true);
 
-  // Game state management
+  /* ---------------- Fetch user state on mount ---------------- */
+
+  useEffect(() => {
+    const loadUserState = async () => {
+      try {
+        const state = await fetchUserState(prolificPID, sessionID);
+        setUserState(state);
+        if (state?.current_level) {
+          setCompletedTrials(state.current_level);
+        }
+      } catch (error) {
+        console.error('Failed to load user state:', error);
+      } finally {
+        setUserStateLoading(false);
+      }
+    };
+
+    loadUserState();
+  }, [prolificPID, sessionID]);
   const NUM_OUTFITS = 4; // Number of anteater outfit stages
   const gameState = useGameState(trialList.length);
 
@@ -272,6 +293,24 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
       {ready && !walkthroughComplete && (
         <Walkthrough onComplete={() => setWalkthroughComplete(true)} />
+      )}
+
+      {userState && !userStateLoading && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: '#d4edda',
+          border: '1px solid #28a745',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          color: '#155724',
+          zIndex: 100,
+          maxWidth: '300px'
+        }}>
+          <strong>Welcome back!</strong> You left off at level {userState.current_level || 0}. Week {userState.week_of_study || 1}, Set {userState.game_set || 1}.
+        </div>
       )}
 
       <div className="book-wrapper">

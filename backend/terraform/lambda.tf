@@ -35,14 +35,14 @@ resource "aws_lambda_function" "metrics_reader" {
 
   environment {
     variables = {
-      DYNAMO_TABLE = aws_dynamodb_table.metrics_table.name
+      TABLE_NAME = aws_dynamodb_table.metrics_table.name
     }
   }
 }
 
 data "archive_file" "user_state_zip" {
   type        = "zip"
-  source_file = "${path.module}/functions/user_state_handler.py"
+  source_file = "${path.module}/functions/user_state.py"
   output_path = "${path.module}/functions/user_state_handler.zip"
 }
 

@@ -14,10 +14,37 @@ paths:
         httpMethod: "POST"
         uri: "${lambda_arn}"
         connectionType: "INTERNET"
+  /state:
+    get:
+      parameters:
+      - name: userID
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: sessionId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: "User state retrieved"
+        "404":
+          description: "State not found"
+        "500":
+          description: "Server error"
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "${user_state_lambda_arn}"
+        connectionType: "INTERNET"
 x-amazon-apigateway-cors:
   allowMethods:
   - "OPTIONS"
   - "POST"
+  - "GET"
   allowHeaders:
   - "authorization"
   - "content-type"

@@ -22,7 +22,7 @@ resource "aws_dynamodb_table" "user_state_table" {
   billing_mode = "PAY_PER_REQUEST"
 
   hash_key  = "userId"
-  range_key = "gameType"
+  range_key = "sessionId"
 
   attribute {
     name = "userId"
@@ -30,7 +30,7 @@ resource "aws_dynamodb_table" "user_state_table" {
   }
 
   attribute {
-    name = "gameType"
+    name = "sessionId"
     type = "S"
   }
 }

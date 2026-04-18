@@ -33,7 +33,7 @@ interface WalkthroughProps {
 
 export default function Walkthrough({ onComplete }: WalkthroughProps) {
   const [step, setStep] = useState(0);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ message: string; isCorrect: boolean } | null>(null);
 
   const { dialogue, highlight, imageIndex, sideBySide } = STEPS[step];
   const isFirst = step === 0;
@@ -50,13 +50,13 @@ export default function Walkthrough({ onComplete }: WalkthroughProps) {
 
     const isCorrect = choice.toLowerCase() === highlight;
     if (isCorrect) {
-      setFeedback("✓ Great! Now let's move on.");
+      setFeedback({ message: "✓ Great! Now let's move on.", isCorrect: true });
       setTimeout(() => {
         setFeedback(null);
         setStep((s) => s + 1);
       }, 1200);
     } else {
-      setFeedback("Not quite! Try the " + highlight.toUpperCase() + " button.");
+      setFeedback({ message: "Not quite! Try the " + highlight.toUpperCase() + " button.", isCorrect: false });
       setTimeout(() => setFeedback(null), 1500);
     }
   };
@@ -103,7 +103,7 @@ export default function Walkthrough({ onComplete }: WalkthroughProps) {
           </div>
         </div>
 
-        {feedback && <div className="wt-feedback">{feedback}</div>}
+        {feedback && <div className={`wt-feedback ${feedback.isCorrect ? 'wt-feedback--correct' : 'wt-feedback--incorrect'}`}>{feedback.message}</div>}
 
         <div className="wt-peter-row">
           <div className="wt-bubble">

@@ -62,20 +62,48 @@ resource "aws_iam_policy" "mst_developer_policy" {
     Version = "2012-10-17",
     Statement = [
       {
+        Sid    = "LambdaAccess"
         Effect = "Allow",
         Action = [
           "lambda:InvokeFunction",
           "lambda:GetFunction",
-          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionCode"
+        ],
+        Resource = "arn:aws:lambda:*:*:function:metrics-*"
+      },
+      {
+        Sid    = "DynamoDBAccess"
+        Effect = "Allow",
+        Action = [
           "dynamodb:DescribeTable",
           "dynamodb:Scan",
-          "dynamodb:Query",
-          "s3:ListBucket",
+          "dynamodb:Query"
+        ],
+        Resource = [
+          "arn:aws:dynamodb:*:*:table/metrics-table",
+          "arn:aws:dynamodb:*:*:table/user-state-table"
+        ]
+      },
+      {
+        Sid    = "S3Access"
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          aws_s3_bucket.gamified_mst.arn,
+          "${aws_s3_bucket.gamified_mst.arn}/*"
+        ]
+      },
+      {
+        Sid    = "CloudWatchLogs"
+        Effect = "Allow",
+        Action = [
           "logs:DescribeLogGroups",
           "logs:GetLogEvents"
         ],
-        # Change for least privilege ARNs
-        Resource = "*"
+        Resource = "arn:aws:logs:*:*:*"
       }
     ]
   })
