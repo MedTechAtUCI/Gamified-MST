@@ -61,7 +61,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
     loadUserState();
   }, [prolificPID, sessionID]);
-  const NUM_OUTFITS = 4; // Number of anteater outfit stages
+  const NUM_OUTFITS = 5; // Number of anteater outfit stages
   const gameState = useGameState(trialList.length);
 
   // Sync completed trials with gamestate
@@ -120,17 +120,17 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
   /* ---------------- Load task resources ---------------- */
 
   const loadResources = useCallback(
-    async (task: TaskType) => {
+    async (task: TaskType, savedSet?: number) => {
       try {
         const maxSet = 6;
         const maxShuffle = 2;
 
-        const set = Math.floor(Math.random() * maxSet) + 1;
-        const shuffle = Math.floor(Math.random() * maxShuffle) + 1;
+        // Use saved set if returning user, otherwise randomize
+        const set = savedSet || (Math.floor(Math.random() * maxSet) + 1);
         setCurrentSet(set);
 
         const loadedBins = await loadBins(set);
-        const filePath = `/jsOrders/cMST_${task}_orders_${set}_1_${shuffle}.json`;
+        const filePath = `/jsOrders/cMST_${task}_orders_${set}_1_${Math.floor(Math.random() * maxShuffle) + 1}.json`;
 
         const res = await fetch(filePath);
         const data: RawTrial[] = await res.json();
@@ -194,7 +194,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
             setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 1000);
           }
         },
-        on_finish: (data: { response: number }) => {
+        on_finish: (data: { response: number; rt: number }) => {
           const labels = ['Old', 'Similar', 'New'];
           const trialRecord = {
             participant_id: sessionData?.sid || 'guest',
@@ -211,10 +211,12 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
           console.log('Trial completed:', trialRecord);
 
           // Increment completed trials counter to sync gamestate
-          setCompletedTrials((prev) => prev + 1);
-          
-          // Save this trial immediately
-          saveTrialData(trialRecord);
+          setCompletedTrials((prev) => {
+            const newLevel = prev + 1;
+            // Save this trial immediately with the new level
+            saveTrialData(trialRecord, newLevel);
+            return newLevel;
+          });
         },
       })),
 
@@ -239,7 +241,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
   /* ---------------- Save data after each trial ---------------- */
 
-  const saveTrialData = async (trialData: any) => {
+  const saveTrialData = async (trialData: any, newLevel?: number) => {
     const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
     
     if (!AWS_API_GATEWAY) {
@@ -248,11 +250,12 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
     }
 
     try {
+      const currentLevel = newLevel ?? gameState.currentLevel;
       const payload = {
         trials: [trialData],
         user_id: prolificPID,
         session_id: sessionID,
-        current_level: gameState.currentLevel,
+        current_level: currentLevel,
         game_week: 1,
         set: currentSet || 1,
       };
@@ -324,9 +327,9 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
   useEffect(() => {
     if (ready) {
-      loadResources(taskType);
+      loadResources(taskType, userState?.game_set);
     }
-  }, [ready, loadResources, taskType]);
+  }, [ready, loadResources, taskType, userState?.game_set]);
 
   useEffect(() => {
     if (ready && walkthroughComplete && prefetchDone && jsPsychPlugins && trialList.length && !running) {
@@ -347,24 +350,6 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
       {ready && !walkthroughComplete && (
         <Walkthrough onComplete={() => setWalkthroughComplete(true)} />
-      )}
-
-      {userState && !userStateLoading && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: '#d4edda',
-          border: '1px solid #28a745',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          color: '#155724',
-          zIndex: 100,
-          maxWidth: '300px'
-        }}>
-          <strong>Welcome back!</strong> You left off at level {userState.current_level || 0}. Week {userState.week_of_study || 1}, Set {userState.game_set || 1}.
-        </div>
       )}
 
       <div className="book-wrapper">

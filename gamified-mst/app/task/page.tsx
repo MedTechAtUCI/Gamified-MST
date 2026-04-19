@@ -13,13 +13,13 @@ function TaskContent() {
     (searchParams.get('mode') as TaskType) ?? 'Flatx2';
     
   const prolificPID = 
-    (searchParams.get('PROLIFIC_PID') as TaskType) ?? 'test';
+    searchParams.get('PROLIFIC_PID') ?? 'test';
 
   const studyID = 
-    (searchParams.get('STUDY_ID') as TaskType) ?? 'test';
+    searchParams.get('STUDY_ID') ?? 'test';
 
   const sessionID = 
-    (searchParams.get('SESSION_ID') as TaskType) ?? 'test';
+    searchParams.get('SESSION_ID') ?? 'test';
 
   return <TaskPage taskType={taskType} prolificPID={prolificPID} studyID={studyID} sessionID={sessionID} />;
 }
