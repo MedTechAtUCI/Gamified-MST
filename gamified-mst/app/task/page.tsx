@@ -12,14 +12,17 @@ function TaskContent() {
   const taskType =
     (searchParams.get('mode') as TaskType) ?? 'Flatx2';
     
+  // Generate random ID if not provided (for testing without Prolific)
+  const generateRandomId = () => Math.random().toString(36).substring(2, 11);
+    
   const prolificPID = 
-    searchParams.get('PROLIFIC_PID') ?? 'test';
+    searchParams.get('PROLIFIC_PID') ?? generateRandomId();
 
   const studyID = 
-    searchParams.get('STUDY_ID') ?? 'test';
+    searchParams.get('STUDY_ID') ?? 'default_study';
 
   const sessionID = 
-    searchParams.get('SESSION_ID') ?? 'test';
+    searchParams.get('SESSION_ID') ?? generateRandomId();
 
   return <TaskPage taskType={taskType} prolificPID={prolificPID} studyID={studyID} sessionID={sessionID} />;
 }

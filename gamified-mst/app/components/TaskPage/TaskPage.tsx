@@ -169,6 +169,12 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
   const startExperiment = () => {
     const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+    
+    if (!CLOUDFRONT_URL) {
+      console.error('NEXT_PUBLIC_CLOUDFRONT_URL is not configured');
+      alert('Configuration error: CloudFront URL not set. Please check environment variables.');
+      return;
+    }
 
     if (!trialList.length || !jsPsychPlugins || !sessionData) return;
 
@@ -309,15 +315,27 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
   useEffect(() => {
     if (!trialList.length) return;
     const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+    
+    if (!CLOUDFRONT_URL) {
+      console.warn('NEXT_PUBLIC_CLOUDFRONT_URL not set, skipping prefetch');
+      setPrefetchDone(true);
+      return;
+    }
 
     let settled = 0;
+    let failed = 0;
     const total = trialList.length;
 
     trialList.forEach((t) => {
       const img = new Image();
-      img.onload = img.onerror = () => {
+      img.onload = () => {
         settled++;
-        if (settled === total) setPrefetchDone(true);
+        if (settled + failed === total) setPrefetchDone(true);
+      };
+      img.onerror = () => {
+        console.warn(`Failed to prefetch image: ${t.image}`);
+        failed++;
+        if (settled + failed === total) setPrefetchDone(true);
       };
       img.src = `${CLOUDFRONT_URL}/${encodeURI(t.image)}`;
     });

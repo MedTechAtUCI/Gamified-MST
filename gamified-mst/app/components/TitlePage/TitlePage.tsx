@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import './TitlePage.css';
 
 import PeterDialogue from './PetrDiag';
@@ -13,8 +14,24 @@ import soundOnBtn from '../../images/start_screen/buttons/sound_on_button.png';
 
 export default function TitlePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isTestMode = searchParams.get('test') === 'true';
+  
+  const [prolificPID, setProlificPID] = useState('');
+  const [sessionID, setSessionID] = useState('');
+  const [studyID, setStudyID] = useState('');
 
-return (
+  const handleStartGame = () => {
+    const params = new URLSearchParams({
+      PROLIFIC_PID: prolificPID || 'test_user',
+      SESSION_ID: sessionID || 'test_session',
+      STUDY_ID: studyID || 'test_study',
+      mode: 'Imbal2x3',
+    });
+    router.push(`/task?${params.toString()}`);
+  };
+
+  return (
     <div className="scene">
       <img src={mainBg.src} className="bgImage" alt="" />
 
@@ -31,9 +48,51 @@ return (
         <img src={peterAnteater.src} className="petr" alt="Peter" />
       </PeterDialogue>
 
-      <button className="startButton" onClick={() => router.push('/task?mode=Flatx2&test=true')}>
+      <button className="startButton" onClick={handleStartGame}>
         <img src={startBtn.src} alt="START" />
       </button>
+
+      {isTestMode && (
+        <div className="testModeOverlay">
+          <div className="testModeModal">
+            <h2>Enter Test Credentials</h2>
+            
+            <div className="testModeFormGroup">
+              <label>Prolific PID</label>
+              <input
+                type="text"
+                placeholder="Leave empty for default"
+                value={prolificPID}
+                onChange={(e) => setProlificPID(e.target.value)}
+              />
+            </div>
+
+            <div className="testModeFormGroup">
+              <label>Session ID</label>
+              <input
+                type="text"
+                placeholder="Leave empty for default"
+                value={sessionID}
+                onChange={(e) => setSessionID(e.target.value)}
+              />
+            </div>
+
+            <div className="testModeFormGroup">
+              <label>Study ID</label>
+              <input
+                type="text"
+                placeholder="Leave empty for default"
+                value={studyID}
+                onChange={(e) => setStudyID(e.target.value)}
+              />
+            </div>
+
+            <button className="testModeSubmitBtn" onClick={handleStartGame}>
+              Start Game
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
