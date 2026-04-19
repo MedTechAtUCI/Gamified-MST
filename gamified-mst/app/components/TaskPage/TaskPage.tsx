@@ -24,9 +24,11 @@ type TaskPageProps = {
   prolificPID: string;
   studyID: string;
   sessionID: string;
+  participantAge?: number;
+  participantGender?: string;
 };
 
-const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) => {
+const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender }: TaskPageProps) => {
   const [trialList, setTrialList] = useState<TrialData[]>([]);
   const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
@@ -264,6 +266,8 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
         current_level: currentLevel,
         game_week: 1,
         set: currentSet || 1,
+        ...(typeof participantAge !== 'undefined' ? { participant_age: participantAge } : {}),
+        ...(participantGender ? { participant_gender: participantGender } : {}),
       };
 
       console.log('Saving trial data:', payload);
@@ -298,6 +302,8 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
           prolificPID,
           studyID,
           sessionID,
+          participantAge,
+          participantGender,
         },
         gameState.currentLevel,
         1,

@@ -4,6 +4,8 @@ type ProlificData = {
     prolificPID: string;
     studyID: string;
     sessionID: string;
+    participantAge?: number;
+    participantGender?: string;
 };
 
 export const sendMetrics = async ( 
@@ -38,6 +40,8 @@ export const sendMetrics = async (
         current_level: currentLevel,
         game_week: gameWeek,
         set: gameSet,
+        ...(typeof prolific.participantAge !== 'undefined' ? { participant_age: prolific.participantAge } : {}),
+        ...(prolific.participantGender ? { participant_gender: prolific.participantGender } : {}),
     };
 
     console.log('Sending metrics payload:', payload);

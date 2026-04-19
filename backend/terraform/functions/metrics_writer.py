@@ -28,17 +28,28 @@ def lambda_handler(event, context):
         game_set = payload.get("set")
         week_of_study = payload.get("game_week")
 
+        participant_age = payload.get("participant_age")
+        participant_gender = payload.get("participant_gender")
+
         if user_id and session_id:
-            update_expr = "SET current_level = :lvl, week_of_study = :week, game_set = :set"
+            update_parts = ["current_level = :lvl", "week_of_study = :week", "game_set = :set"]
             expr_values = {
                 ":lvl": curr_level,
                 ":week": week_of_study,
                 ":set": game_set
             }
-            
+
+            if participant_age is not None:
+                update_parts.append("participant_age = :age")
+                expr_values[":age"] = participant_age
+
+            if participant_gender:
+                update_parts.append("participant_gender = :gender")
+                expr_values[":gender"] = participant_gender
+
             state_table.update_item(
                 Key={"userId": user_id, "sessionId": session_id},
-                UpdateExpression=update_expr,
+                UpdateExpression="SET " + ", ".join(update_parts),
                 ExpressionAttributeValues=expr_values
             )
         
@@ -58,6 +69,13 @@ def lambda_handler(event, context):
                         "reaction_time_ms": trial.get("reaction_time_ms"),
                         "timestamp": trial.get("timestamp")
                     }
+
+                    if participant_age is not None:
+                        item["participant_age"] = participant_age
+
+                    if participant_gender:
+                        item["participant_gender"] = participant_gender
+
                     batch.put_item(Item=item)
 
         return {

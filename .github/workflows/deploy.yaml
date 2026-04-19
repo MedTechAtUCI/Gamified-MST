@@ -26,7 +26,7 @@ jobs:
 
       - name: Set environment variable
         run: |
-          echo "NEXT_PUBLIC_AWS_S3_BUCKET=${{ secrets.NEXT_PUBLIC_AWS_S3_BUCKET }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_CLOUDFRONT_URL=${{ secrets.NEXT_PUBLIC_CLOUDFRONT_URL }}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_AWS_METRICS_API=${{ secrets.NEXT_PUBLIC_AWS_METRICS_API }}" >> $GITHUB_ENV
 
       - name: Install dependencies

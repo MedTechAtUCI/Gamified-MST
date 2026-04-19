@@ -4,6 +4,8 @@ export type UserState = {
   current_level?: number;
   week_of_study?: number;
   game_set?: number;
+  participant_age?: number;
+  participant_gender?: string;
   [key: string]: any;
 };
 

@@ -20,15 +20,34 @@ export default function TitlePage() {
   const [prolificPID, setProlificPID] = useState('');
   const [sessionID, setSessionID] = useState('');
   const [studyID, setStudyID] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const parsedAge = Number(age);
+  const isAgeValid = Number.isFinite(parsedAge) && parsedAge >= 18;
+
+  const canStart = !isTestMode || (isAgeValid && gender.trim() !== '');
 
   const handleStartGame = () => {
+    if (!canStart) {
+      return;
+    }
+
+    if (isTestMode) {
+      window.sessionStorage.setItem(
+        'mst_test_demographics',
+        JSON.stringify({ participantAge: parsedAge, participantGender: gender })
+      );
+    } else {
+      window.sessionStorage.removeItem('mst_test_demographics');
+    }
+
     const params = new URLSearchParams({
       PROLIFIC_PID: prolificPID || 'test_user',
       SESSION_ID: sessionID || 'test_session',
       STUDY_ID: studyID || 'test_study',
       mode: 'Imbal2x3',
     });
-    router.push(`/task?${params.toString()}`);
+    router.push(`/consent?${params.toString()}`);
   };
 
   return (
@@ -87,7 +106,29 @@ export default function TitlePage() {
               />
             </div>
 
-            <button className="testModeSubmitBtn" onClick={handleStartGame}>
+            <div className="testModeFormGroup">
+              <label>Age</label>
+              <input
+                type="number"
+                min="18"
+                step="1"
+                placeholder="Must be 18 or older"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+              />
+            </div>
+
+            <div className="testModeFormGroup">
+              <label>Gender / sex</label>
+              <select value={gender} onChange={(e) => setGender(e.target.value)}>
+                <option value="">Select one</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <button className="testModeSubmitBtn" onClick={handleStartGame} disabled={!canStart}>
               Start Game
             </button>
           </div>
