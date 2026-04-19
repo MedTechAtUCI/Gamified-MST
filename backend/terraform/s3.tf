@@ -11,19 +11,16 @@ resource "aws_s3_bucket_versioning" "gamified_mst_versioning" {
   }
 }
 
-# CORS configuration
-resource "aws_s3_bucket_cors_configuration" "gamified_mst_cors" {
-  bucket = aws_s3_bucket.gamified_mst.id
-
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["GET"]
-    allowed_origins = ["http://localhost:3000", "https://mst.medtech-uci.com/"]
-    expose_headers  = ["ETag"]
-    max_age_seconds = 3600
-  }
+# CloudFront Origin Access Control
+resource "aws_cloudfront_origin_access_control" "mst_oac" {
+  name                              = "mst-oac"
+  description                       = "OAC for gamified-mst-prod"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
+# S3 bucket policy - only allow CloudFront via OAC
 resource "aws_s3_bucket_policy" "gamified_mst_policy" {
   bucket = aws_s3_bucket.gamified_mst.id
 
@@ -31,7 +28,7 @@ resource "aws_s3_bucket_policy" "gamified_mst_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowCloudFrontRead"
+        Sid    = "AllowCloudFrontOAC"
         Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
@@ -40,12 +37,64 @@ resource "aws_s3_bucket_policy" "gamified_mst_policy" {
         Resource = "${aws_s3_bucket.gamified_mst.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/*"
+            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.mst_distribution.id}"
           }
         }
       }
     ]
   })
+}
+
+# CloudFront distribution
+resource "aws_cloudfront_distribution" "mst_distribution" {
+  origin {
+    domain_name              = aws_s3_bucket.gamified_mst.bucket_regional_domain_name
+    origin_id                = "s3-gamified-mst"
+    origin_access_control_id = aws_cloudfront_origin_access_control.mst_oac.id
+  }
+
+  enabled = true
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-gamified-mst"
+
+    forwarded_values {
+      query_string = false
+      headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
+      
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "https-only"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+
+  custom_error_response {
+    error_code             = 404
+    response_code          = 404
+    response_page_path     = "/index.html"
+  }
+}
+
+# Output CloudFront domain
+output "cloudfront_domain" {
+  value       = aws_cloudfront_distribution.mst_distribution.domain_name
+  description = "CloudFront domain for serving S3 content"
 }
 
 # Output bucket details

@@ -20,7 +20,7 @@ export const fetchUserState = async (
 
   try {
     const url = new URL(`${API_URL}/state`);
-    url.searchParams.append('userID', prolificPID);
+    url.searchParams.append('userId', prolificPID);
     url.searchParams.append('sessionId', sessionID);
 
     const response = await fetch(url.toString(), {

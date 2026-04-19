@@ -22,7 +22,7 @@ def lambda_handler(event, context):
 
     try:
         if "queryStringParameters" in event and event["queryStringParameters"]:
-            user_id = event["queryStringParameters"].get("userID")
+            user_id = event["queryStringParameters"].get("userId")
             session_id = event["queryStringParameters"].get("sessionId")
         else:
             user_id = event.get("userId")
@@ -42,7 +42,7 @@ def lambda_handler(event, context):
         
         else:
             return {
-                "statuscode": 404,
+                "statusCode": 404,
                 "headers": headers,
                 "body": json.dumps({"message": "State not found"})
             }
@@ -50,6 +50,6 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
+            "headers": headers,
             "body": json.dumps({"error": str(e)})
         }

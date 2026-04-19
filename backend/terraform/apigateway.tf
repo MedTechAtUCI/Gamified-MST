@@ -6,6 +6,15 @@ resource "aws_apigatewayv2_api" "metrics_api" {
     lambda_arn              = aws_lambda_function.metrics_writer.invoke_arn
     user_state_lambda_arn   = aws_lambda_function.user_state_handler.invoke_arn
   })
+
+  cors_configuration {
+    allow_origins = ["http://localhost:3000", "https://mst.medtech-uci.com"]
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"]
+    allow_headers = ["*"]
+    expose_headers = ["*"]
+    max_age       = 3600
+    allow_credentials = false
+  }
 }
 
 resource "aws_apigatewayv2_stage" "default" {

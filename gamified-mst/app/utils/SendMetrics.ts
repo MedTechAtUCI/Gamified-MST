@@ -10,41 +10,63 @@ export const sendMetrics = async (
     JsPsychData: string, 
     sessionData: Session | null, 
     api: string, 
-    prolific: ProlificData
+    prolific: ProlificData,
+    currentLevel: number,
+    gameWeek: number,
+    gameSet: number
 ) => {
 
     const trials = JSON.parse(JsPsychData).filter((t: any) => t.trial_type === 'image-button-response');
-    const formattedData = trials.map((trial: any, index: number) => {
-        const labels = ['Old', 'Similar', 'New'];
+    const payload = { 
+        trials: trials.map((trial: any, index: number) => {
+            const labels = ['Old', 'Similar', 'New'];
+            return {
+                participant_id: sessionData?.sid || 'guest',
+                'session_id#trial_number': `${sessionData?.sid || '001'}#${String(index + 1).padStart(3, '0')}`,
+                trial_id: trial.trial_index.toString(),
+                image_id: trial.stimulus,
+                trial_type: trial.trial_type,
+                lure_bin: trial.bin?.toString() || '0',
+                participant_response: labels[trial.response],
+                correct: trial.response === trial.correct_resp,
+                reaction_time_ms: trial.rt,
+                timestamp: new Date().toISOString(),
+            };
+        }),
+        user_id: prolific.prolificPID,
+        session_id: prolific.sessionID,
+        current_level: currentLevel,
+        game_week: gameWeek,
+        set: gameSet,
+    };
 
-        return {
-            participant_id: sessionData?.sid || 'guest',
-            'session_id#trial_number': `${sessionData?.sid || '001'}#${String(index + 1).padStart(3, '0')}`,
-            trial_id: trial.trial_index.toString(),
-            image_id: trial.stimulus,
-            trial_type: trial.trial_type,
-            lure_bin: trial.bin?.toString() || '0',
-            participant_response: labels[trial.response],
-            correct: trial.response === trial.correct_resp,
-            reaction_time_ms: trial.rt,
-            timestamp: new Date().toISOString(),
-            prolific_pid: prolific.prolificPID,
-            study_id: prolific.studyID,
-            session_id: prolific.sessionID,
-        };
-    });
+    console.log('Sending metrics payload:', payload);
 
     try {
-        const response = await fetch(`${api}/metrics`, {
+        const url = `${api}/metrics`;
+        console.log('POST to:', url);
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trials: formattedData }),
+            body: JSON.stringify(payload),
         })
 
-        if (!response.ok) throw new Error('Metrics not sent!');
-        return await response.json();
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Metrics response error:', errorBody);
+            throw new Error(`Metrics POST failed: ${response.status} ${errorBody}`);
+        }
+        
+        const result = await response.json();
+        console.log('Metrics response:', result);
+        return result;
     }
     catch (e) {
-        console.error('DynamoDB save error:', e);
+        console.error('Failed to send metrics:', e);
+        throw e;
     }
 }

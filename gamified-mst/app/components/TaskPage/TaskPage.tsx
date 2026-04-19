@@ -168,7 +168,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
   /* ---------------- Start experiment ---------------- */
 
   const startExperiment = () => {
-    const IMAGE_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+    const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
     if (!trialList.length || !jsPsychPlugins || !sessionData) return;
 
@@ -179,7 +179,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
     const timeline = [
       ...trialList.map((trial) => ({
         type: jsPsychPlugins.imageButtonResponse,
-        stimulus: `${IMAGE_S3_BUCKET}/${encodeURI(trial.image)}`,
+        stimulus: `${CLOUDFRONT_URL}/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
         prompt: `<p>Have you seen this before? Is it Old, Similar, or New?</p>`,
         data: trial,
@@ -196,16 +196,25 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
         },
         on_finish: (data: { response: number }) => {
           const labels = ['Old', 'Similar', 'New'];
-          console.log({
-            trial: trial.trial,
-            image: trial.image,
-            correctResponse: labels[trial.correct_resp],
-            userResponse: labels[data.response],
-            isCorrect: trial.correct_resp === data.response,
-          });
+          const trialRecord = {
+            participant_id: sessionData?.sid || 'guest',
+            trial_id: trial.trial.toString(),
+            image_id: trial.image,
+            trial_type: 'image-button-response',
+            lure_bin: trial.bin?.toString() || '0',
+            participant_response: labels[data.response],
+            correct: trial.correct_resp === data.response,
+            reaction_time_ms: data.rt || 0,
+            timestamp: new Date().toISOString(),
+          };
+
+          console.log('Trial completed:', trialRecord);
 
           // Increment completed trials counter to sync gamestate
           setCompletedTrials((prev) => prev + 1);
+          
+          // Save this trial immediately
+          saveTrialData(trialRecord);
         },
       })),
 
@@ -228,22 +237,67 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
     setRunning(true);
   };
 
-  /* ---------------- Save data ---------------- */
+  /* ---------------- Save data after each trial ---------------- */
+
+  const saveTrialData = async (trialData: any) => {
+    const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
+    
+    if (!AWS_API_GATEWAY) {
+      console.error('AWS API Gateway URL not configured');
+      return;
+    }
+
+    try {
+      const payload = {
+        trials: [trialData],
+        user_id: prolificPID,
+        session_id: sessionID,
+        current_level: gameState.currentLevel,
+        game_week: 1,
+        set: currentSet || 1,
+      };
+
+      console.log('Saving trial data:', payload);
+
+      const response = await fetch(`${AWS_API_GATEWAY}/metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('Trial save response:', response.status);
+      if (!response.ok) {
+        throw new Error(`Trial save failed: ${response.status}`);
+      }
+    } catch (e) {
+      console.error('Failed to save trial:', e);
+    }
+  };
+
+  /* ---------------- Save data at end (backup) ---------------- */
 
   const saveData = async (data: string) => {
     const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
-    console.log('Experiment finished. Sending metrics...');
+    console.log('Experiment finished. Sending final metrics...');
 
     try {
-      await sendMetrics(data, sessionData, AWS_API_GATEWAY || '', {
-        prolificPID,
-        studyID,
-        sessionID,
-      });
-      console.log('Metrics saved.');
+      await sendMetrics(
+        data, 
+        sessionData, 
+        AWS_API_GATEWAY || '', 
+        {
+          prolificPID,
+          studyID,
+          sessionID,
+        },
+        gameState.currentLevel,
+        1,
+        currentSet || 1
+      );
+      console.log('Final metrics saved.');
     }
     catch (e) {
-      console.error('Failed to save data:', e);
+      console.error('Failed to save final data:', e);
     }
   };
 
@@ -251,7 +305,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
 
   useEffect(() => {
     if (!trialList.length) return;
-    const IMAGE_S3_BUCKET = process.env.NEXT_PUBLIC_AWS_S3_BUCKET;
+    const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
     let settled = 0;
     const total = trialList.length;
@@ -262,7 +316,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID }: TaskPageProps) 
         settled++;
         if (settled === total) setPrefetchDone(true);
       };
-      img.src = `${IMAGE_S3_BUCKET}/${encodeURI(t.image)}`;
+      img.src = `${CLOUDFRONT_URL}/${encodeURI(t.image)}`;
     });
   }, [trialList]);
 
