@@ -1,0 +1,88 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/42879de7b8087bc9.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T1293,<!doctype html>
+<html>
+<!-- 11/30/2020: Updated batch session logging to create a single array per subject with a chronological list of each time
+-->
+<head>
+  <link rel="stylesheet" href="/css/consent_form.css" />
+  <meta charset="UTF-8" />
+  <title>Consent Form</title>
+</head>
+
+<body>
+  <p id="text">
+
+
+  <div id="consenttext">
+    <h1 style="text-align: center">IRB Consent Form</h1>
+    University of California, Irvine<br>
+    Study Information Sheet<br>     
+    UC Reliance #1418: Short and Long Memory Performance_ONLINE<br>
+    <br>       
+    Lead Researcher<br>
+    Craig Stark, Professor<br>
+    Department of Neurobiology and Behavior<br>
+    949-824-4230 / <a href="mailto:cestark@uci.edu">cestark@uci.edu</a><br>
+    
+    <ul>
+    <li>We are asking you to take part in a study conducted by researchers at the University of California, Irvine. Participating in this study is optional.</li>
+    <li>If you choose to be in the study, you will complete an online memory experiment involving pictures of everyday objects. You may also participate in a survey that will help us learn more about how eating habits, physical activity, mood, sleep patterns, and stress may influence memory performance. The session will take about 30 minutes to complete.</li>
+    <li>You can skip questions that you do not want to answer or stop the survey at any time. We will keep your answers confidential and will not share your personal information with anyone outside the research team. </li> 
+    <li>This research is only for participants over the age of 18; if you under the age of 18, please do not complete this survey.</li>
+    <li>Some questions may cause embarrassment or anxiety. If you do not wish to answer a question, you can skip it and go to the next questions. If you do not wish to participate, you can stop.</li>
+    <li>As with most research, there is a chance that confidentiality could be compromised. We take precautions to minimize this risk, including coding your data with a number instead of your name and storing it on a password protected database.
+    <li>You will receive extra course credit for an eligible course through the UCI Social Sciences human subjects’ pool.  You will receive a ½ unit of course credit for each ½ hour of participation in this study.  Total amount of credit you may earn for this study is 1 unit of credit.  The course instructor offering extra course credit for participation in research must provide alternatives to earn extra course credit. The alternative assignment must require equal or less time and effort for the amount of extra credit that can be earned through participation in research.</li>
+    <li>If you have any comments, concerns, or questions regarding the conduct of this research please contact the researchers listed at the top of this form.</li>
+    <li>If you have questions or concerns about your rights as a research participant, you can contact the UCI Institutional Review Board by phone, (949) 824-0665, by e-mail at IRB@research.uci.edu or at 141 Innovation, Suite 250, Irvine, CA 92697.    
+
+    <br><br><b>What is an IRB?</b>  An Institutional Review Board (IRB) is a committee made up of scientists and non-scientists.  The IRB’s role is to protect the rights and welfare of human subjects involved in research.  The IRB also assures that the research complies with applicable regulations, laws, and institutional policies.
+    </li>
+        
+    <li>If you want to participate in this study, click the <b>Agree</b> button to start the survey. Canceling will redirect you back to Prolific.com</li>
+
+  </ul>
+</div>
+<div id="buttons">
+  <button id="agreeButton">I agree</button>
+  <button id="cancelButton">Cancel</button>
+</div>
+</p>
+<script type="text/javascript">
+function getSearchParams() {
+  try {
+    if (window.parent && window.parent !== window) {
+      return new URLSearchParams(window.parent.location.search);
+    }
+  }
+  catch (e) {
+    console.warn('Unable to read parent query string, falling back to local search.', e);
+  }
+  return new URLSearchParams(window.location.search);
+}
+
+function buildTaskUrl() {
+  const params = getSearchParams();
+  params.delete('test');
+  params.delete('age');
+  params.delete('gender');
+  params.delete('sex');
+  return '/task?' + params.toString();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('buttons').style.display = 'block';
+  document.getElementById('agreeButton').addEventListener('click', function () {
+    window.top.location.href = buildTaskUrl();
+  });
+  document.getElementById('cancelButton').addEventListener('click', function () {
+    window.top.location.href = 'https://app.prolific.com/submissions/complete?cc=C1MEQOVH';
+  });
+});
+</script>
+</body>
+
+</html>0:{"buildId":"nvR0dVTby6AT49LZqw8IZ","rsc":["$","$1","c",{"children":[["$","iframe",null,{"title":"Consent form","srcDoc":"$2","style":{"border":0,"width":"100vw","height":"100vh","display":"block"}}],null,"$L3"]}],"loading":null,"isPartial":false}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
