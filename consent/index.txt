@@ -1,8 +1,9 @@
 1:"$Sreact.fragment"
 2:I[39756,["/_next/static/chunks/42879de7b8087bc9.js"],"default"]
 3:I[37457,["/_next/static/chunks/42879de7b8087bc9.js"],"default"]
-5:I[97367,["/_next/static/chunks/42879de7b8087bc9.js"],"OutletBoundary"]
-6:"$Sreact.suspense"
+4:"$Sreact.suspense"
+5:I[44061,["/_next/static/chunks/3ed237dc2c717b8a.js"],"default"]
+6:I[97367,["/_next/static/chunks/42879de7b8087bc9.js"],"OutletBoundary"]
 8:I[97367,["/_next/static/chunks/42879de7b8087bc9.js"],"ViewportBoundary"]
 a:I[97367,["/_next/static/chunks/42879de7b8087bc9.js"],"MetadataBoundary"]
 c:I[68027,[],"default"]
@@ -10,91 +11,8 @@ c:I[68027,[],"default"]
 :HL["/_next/static/chunks/d282000a04a29b95.css","style"]
 :HL["/_next/static/media/797e433ab948586e-s.p.dbea232f.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/caa3a2e1cccd8315-s.p.853070df.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"P":null,"b":"GAk7r63f4cLmCjiwilmYL","c":["","consent",""],"q":"","i":false,"f":[[["",{"children":["consent",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2133c4e4379297ca.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","link","1",{"rel":"stylesheet","href":"/_next/static/chunks/d282000a04a29b95.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__variable antialiased","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",null,["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$@9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$@b"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+0:{"P":null,"b":"-hCNsGgXzOCQedcvJTEQG","c":["","consent",""],"q":"","i":false,"f":[[["",{"children":["consent",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2133c4e4379297ca.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","link","1",{"rel":"stylesheet","href":"/_next/static/chunks/d282000a04a29b95.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__variable antialiased","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[["$","$4",null,{"fallback":["$","div",null,{"children":"Loading consent form..."}],"children":["$","$L5",null,{}]}],[["$","script","script-0",{"src":"/_next/static/chunks/3ed237dc2c717b8a.js","async":true,"nonce":"$undefined"}]],["$","$L6",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$@9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":"$@b"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
 9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
 d:I[27201,["/_next/static/chunks/42879de7b8087bc9.js"],"IconMark"]
 b:[["$","title","0",{"children":"The Gamified MST"}],["$","meta","1",{"name":"description","content":"A cognitive task to assess memory performance using Next.js and jsPsych."}],["$","link","2",{"rel":"icon","href":"/favicon.ico?favicon.d03e474c.ico","sizes":"357x368","type":"image/x-icon"}],["$","$Ld","3",{}]]
 7:null
-e:T1293,<!doctype html>
-<html>
-<!-- 11/30/2020: Updated batch session logging to create a single array per subject with a chronological list of each time
--->
-<head>
-  <link rel="stylesheet" href="/css/consent_form.css" />
-  <meta charset="UTF-8" />
-  <title>Consent Form</title>
-</head>
-
-<body>
-  <p id="text">
-
-
-  <div id="consenttext">
-    <h1 style="text-align: center">IRB Consent Form</h1>
-    University of California, Irvine<br>
-    Study Information Sheet<br>     
-    UC Reliance #1418: Short and Long Memory Performance_ONLINE<br>
-    <br>       
-    Lead Researcher<br>
-    Craig Stark, Professor<br>
-    Department of Neurobiology and Behavior<br>
-    949-824-4230 / <a href="mailto:cestark@uci.edu">cestark@uci.edu</a><br>
-    
-    <ul>
-    <li>We are asking you to take part in a study conducted by researchers at the University of California, Irvine. Participating in this study is optional.</li>
-    <li>If you choose to be in the study, you will complete an online memory experiment involving pictures of everyday objects. You may also participate in a survey that will help us learn more about how eating habits, physical activity, mood, sleep patterns, and stress may influence memory performance. The session will take about 30 minutes to complete.</li>
-    <li>You can skip questions that you do not want to answer or stop the survey at any time. We will keep your answers confidential and will not share your personal information with anyone outside the research team. </li> 
-    <li>This research is only for participants over the age of 18; if you under the age of 18, please do not complete this survey.</li>
-    <li>Some questions may cause embarrassment or anxiety. If you do not wish to answer a question, you can skip it and go to the next questions. If you do not wish to participate, you can stop.</li>
-    <li>As with most research, there is a chance that confidentiality could be compromised. We take precautions to minimize this risk, including coding your data with a number instead of your name and storing it on a password protected database.
-    <li>You will receive extra course credit for an eligible course through the UCI Social Sciences human subjects’ pool.  You will receive a ½ unit of course credit for each ½ hour of participation in this study.  Total amount of credit you may earn for this study is 1 unit of credit.  The course instructor offering extra course credit for participation in research must provide alternatives to earn extra course credit. The alternative assignment must require equal or less time and effort for the amount of extra credit that can be earned through participation in research.</li>
-    <li>If you have any comments, concerns, or questions regarding the conduct of this research please contact the researchers listed at the top of this form.</li>
-    <li>If you have questions or concerns about your rights as a research participant, you can contact the UCI Institutional Review Board by phone, (949) 824-0665, by e-mail at IRB@research.uci.edu or at 141 Innovation, Suite 250, Irvine, CA 92697.    
-
-    <br><br><b>What is an IRB?</b>  An Institutional Review Board (IRB) is a committee made up of scientists and non-scientists.  The IRB’s role is to protect the rights and welfare of human subjects involved in research.  The IRB also assures that the research complies with applicable regulations, laws, and institutional policies.
-    </li>
-        
-    <li>If you want to participate in this study, click the <b>Agree</b> button to start the survey. Canceling will redirect you back to Prolific.com</li>
-
-  </ul>
-</div>
-<div id="buttons">
-  <button id="agreeButton">I agree</button>
-  <button id="cancelButton">Cancel</button>
-</div>
-</p>
-<script type="text/javascript">
-function getSearchParams() {
-  try {
-    if (window.parent && window.parent !== window) {
-      return new URLSearchParams(window.parent.location.search);
-    }
-  }
-  catch (e) {
-    console.warn('Unable to read parent query string, falling back to local search.', e);
-  }
-  return new URLSearchParams(window.location.search);
-}
-
-function buildTaskUrl() {
-  const params = getSearchParams();
-  params.delete('test');
-  params.delete('age');
-  params.delete('gender');
-  params.delete('sex');
-  return '/task?' + params.toString();
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('buttons').style.display = 'block';
-  document.getElementById('agreeButton').addEventListener('click', function () {
-    window.top.location.href = buildTaskUrl();
-  });
-  document.getElementById('cancelButton').addEventListener('click', function () {
-    window.top.location.href = 'https://app.prolific.com/submissions/complete?cc=C1MEQOVH';
-  });
-});
-</script>
-</body>
-
-</html>4:["$","iframe",null,{"title":"Consent form","srcDoc":"$e","style":{"border":0,"width":"100vw","height":"100vh","display":"block"}}]
