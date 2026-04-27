@@ -62,7 +62,7 @@ resource "aws_cloudfront_distribution" "mst_distribution" {
     forwarded_values {
       query_string = false
       headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
-      
+
       cookies {
         forward = "none"
       }
@@ -85,9 +85,9 @@ resource "aws_cloudfront_distribution" "mst_distribution" {
   }
 
   custom_error_response {
-    error_code             = 404
-    response_code          = 404
-    response_page_path     = "/index.html"
+    error_code         = 404
+    response_code      = 404
+    response_page_path = "/index.html"
   }
 }
 

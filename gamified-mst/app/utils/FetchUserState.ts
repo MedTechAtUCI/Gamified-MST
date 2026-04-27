@@ -1,11 +1,20 @@
+export type SessionRecord = {
+  sessionId: string;
+  set_number: number;
+  completed: boolean;
+  current_level?: number;
+  week_of_study?: number;
+};
+
 export type UserState = {
   userId: string;
   sessionId: string;
+  participant_age?: number;
+  participant_gender?: string;
+  sessions?: SessionRecord[];
   current_level?: number;
   week_of_study?: number;
   game_set?: number;
-  participant_age?: number;
-  participant_gender?: string;
   [key: string]: any;
 };
 

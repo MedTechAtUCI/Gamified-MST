@@ -6,6 +6,8 @@ type ProlificData = {
     sessionID: string;
     participantAge?: number;
     participantGender?: string;
+    screenSize?: string;
+    deviceType?: string;
 };
 
 export const sendMetrics = async ( 
@@ -15,24 +17,35 @@ export const sendMetrics = async (
     prolific: ProlificData,
     currentLevel: number,
     gameWeek: number,
-    gameSet: number
+    gameSet: number,
+    sessionCompleted: boolean = false
 ) => {
 
     const trials = JSON.parse(JsPsychData).filter((t: any) => t.trial_type === 'image-button-response');
     const payload = { 
-        trials: trials.map((trial: any, index: number) => {
+        trials: trials.map((trial: any) => {
             const labels = ['Old', 'Similar', 'New'];
+            
+            // Normalize image_id: strip CloudFront URL if present
+            let imageId = trial.stimulus || '';
+            if (imageId.startsWith('http')) {
+                // Extract just the Set#/img#.jpg part
+                const match = imageId.match(/Set\d+\/[^?]+/);
+                imageId = match ? match[0] : imageId;
+            }
+            
             return {
-                participant_id: sessionData?.sid || 'guest',
-                'session_id#trial_number': `${sessionData?.sid || '001'}#${String(index + 1).padStart(3, '0')}`,
-                trial_id: trial.trial_index.toString(),
-                image_id: trial.stimulus,
+                trial_id: trial.trial_index?.toString() || trial.trial?.toString() || '0',
+                image_id: imageId,
                 trial_type: trial.trial_type,
-                lure_bin: trial.bin?.toString() || '0',
+                mst_type: trial.type?.toString() || '0',
+                lag: trial.lag?.toString() || '-1',
+                lure_bin: trial.bin?.toString() || trial.lbin?.toString() || '0',
                 participant_response: labels[trial.response],
+                correct_resp: trial.correct_resp?.toString() || '0',
                 correct: trial.response === trial.correct_resp,
                 reaction_time_ms: trial.rt,
-                timestamp: new Date().toISOString(),
+                timestamp: trial.time_elapsed ? new Date(trial.time_elapsed).toISOString() : new Date().toISOString(),
             };
         }),
         user_id: prolific.prolificPID,
@@ -40,24 +53,21 @@ export const sendMetrics = async (
         current_level: currentLevel,
         game_week: gameWeek,
         set: gameSet,
+        session_completed: sessionCompleted,
         ...(typeof prolific.participantAge !== 'undefined' ? { participant_age: prolific.participantAge } : {}),
         ...(prolific.participantGender ? { participant_gender: prolific.participantGender } : {}),
+        ...(prolific.screenSize ? { screen_size: prolific.screenSize } : {}),
+        ...(prolific.deviceType ? { device_type: prolific.deviceType } : {}),
     };
-
-    console.log('Sending metrics payload:', payload);
 
     try {
         const url = `${api}/metrics`;
-        console.log('POST to:', url);
         
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         })
-
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
         
         if (!response.ok) {
             const errorBody = await response.text();
@@ -66,7 +76,6 @@ export const sendMetrics = async (
         }
         
         const result = await response.json();
-        console.log('Metrics response:', result);
         return result;
     }
     catch (e) {

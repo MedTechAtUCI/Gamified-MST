@@ -18,6 +18,7 @@ import 'jspsych/css/jspsych.css';
 import './TaskPage.css';
 import { sendMetrics } from '@/app/utils/SendMetrics';
 import { fetchUserState, UserState } from '@/app/utils/FetchUserState';
+import { getSessionSet, getNextSet, isSessionCompleted, areAllSetsCompleted } from '@/app/utils/SetAssignment';
 
 type TaskPageProps = {
   taskType: TaskType;
@@ -41,8 +42,32 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   const [completedTrials, setCompletedTrials] = useState(0); // Track completed trials to sync with gamestate
   const [prevOutfitIndex, setPrevOutfitIndex] = useState(-1); // Track previous outfit to detect unlocks
   const [showCompletion, setShowCompletion] = useState<boolean>(false); // Show completion panel at end
+  const [allSetsCompleted, setAllSetsCompleted] = useState<boolean>(false); // All 6 sets completed
   const [userState, setUserState] = useState<UserState | null>(null);
   const [userStateLoading, setUserStateLoading] = useState<boolean>(true);
+  const [screenSize, setScreenSize] = useState<string>('');
+  const [deviceType, setDeviceType] = useState<string>('');
+
+  /* ---------------- Detect screen size and device type on mount ---------------- */
+
+  useEffect(() => {
+    const getDeviceInfo = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const size = `${width}x${height}`;
+      setScreenSize(size);
+      
+      // Determine device type based on screen width
+      let type = 'desktop';
+      if (width < 768) type = 'mobile';
+      else if (width < 1024) type = 'tablet';
+      setDeviceType(type);
+    };
+    
+    getDeviceInfo();
+    window.addEventListener('resize', getDeviceInfo);
+    return () => window.removeEventListener('resize', getDeviceInfo);
+  }, []);
 
   /* ---------------- Fetch user state on mount ---------------- */
 
@@ -51,7 +76,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
       try {
         const state = await fetchUserState(prolificPID, sessionID);
         setUserState(state);
-        if (state?.current_level) {
+        if (state?.current_level !== undefined && state.current_level > 0) {
           setCompletedTrials(state.current_level);
         }
       } catch (error) {
@@ -93,6 +118,13 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
     }
   }, [completedTrials, trialList.length]);
 
+  // Check if user has already completed all trials - if so, auto-show completion
+  useEffect(() => {
+    if (trialList.length > 0 && completedTrials >= trialList.length && ready && walkthroughComplete) {
+      setShowCompletion(true);
+    }
+  }, [completedTrials, trialList.length, ready, walkthroughComplete]);
+
   /* ---------------- Load jsPsych plugins ---------------- */
 
   useEffect(() => {
@@ -122,17 +154,34 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   /* ---------------- Load task resources ---------------- */
 
   const loadResources = useCallback(
-    async (task: TaskType, savedSet?: number) => {
+    async (task: TaskType, userStateData?: UserState | null | undefined) => {
       try {
-        const maxSet = 6;
-        const maxShuffle = 2;
+        // Check if all sets are completed
+        if (areAllSetsCompleted(userStateData)) {
+          setAllSetsCompleted(true);
+          setShowCompletion(true);
+          return;
+        }
 
-        // Use saved set if returning user, otherwise randomize
-        const set = savedSet || (Math.floor(Math.random() * maxSet) + 1);
+        // Check if this session already has an assigned set
+        let set = getSessionSet(userStateData, sessionID);
+        
+        // If not assigned, get next available set
+        if (!set) {
+          set = getNextSet(userStateData);
+        }
+
+        // If getNextSet returns null, all sets are completed
+        if (!set) {
+          setAllSetsCompleted(true);
+          setShowCompletion(true);
+          return;
+        }
+        
         setCurrentSet(set);
 
         const loadedBins = await loadBins(set);
-        const filePath = `/jsOrders/cMST_${task}_orders_${set}_1_${Math.floor(Math.random() * maxShuffle) + 1}.json`;
+        const filePath = `/jsOrders/cMST_${task}_orders_${set}_1_1.json`;
 
         const res = await fetch(filePath);
         const data: RawTrial[] = await res.json();
@@ -164,7 +213,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         console.error('Error loading JS orders:', e);
       }
     },
-    [loadBins]
+    [loadBins, sessionID]
   );
 
   /* ---------------- Start experiment ---------------- */
@@ -184,8 +233,11 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
       display_element: 'jspsych-target',
     } as Parameters<JsPsychInit>[0]);
 
+    // Only run remaining trials (skip already completed)
+    const remainingTrials = trialList.slice(completedTrials);
+
     const timeline = [
-      ...trialList.map((trial) => ({
+      ...remainingTrials.map((trial) => ({
         type: jsPsychPlugins.imageButtonResponse,
         stimulus: `${CLOUDFRONT_URL}/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
@@ -209,14 +261,15 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
             trial_id: trial.trial.toString(),
             image_id: trial.image,
             trial_type: 'image-button-response',
+            mst_type: (trial as any).mst_type,
+            lag: (trial as any).lag,
             lure_bin: trial.bin?.toString() || '0',
             participant_response: labels[data.response],
+            correct_resp: trial.correct_resp,
             correct: trial.correct_resp === data.response,
             reaction_time_ms: data.rt || 0,
             timestamp: new Date().toISOString(),
           };
-
-          console.log('Trial completed:', trialRecord);
 
           // Increment completed trials counter to sync gamestate
           setCompletedTrials((prev) => {
@@ -268,17 +321,15 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         set: currentSet || 1,
         ...(typeof participantAge !== 'undefined' ? { participant_age: participantAge } : {}),
         ...(participantGender ? { participant_gender: participantGender } : {}),
+        ...(screenSize ? { screen_size: screenSize } : {}),
+        ...(deviceType ? { device_type: deviceType } : {}),
       };
-
-      console.log('Saving trial data:', payload);
 
       const response = await fetch(`${AWS_API_GATEWAY}/metrics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      console.log('Trial save response:', response.status);
       if (!response.ok) {
         throw new Error(`Trial save failed: ${response.status}`);
       }
@@ -291,8 +342,6 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
 
   const saveData = async (data: string) => {
     const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
-    console.log('Experiment finished. Sending final metrics...');
-
     try {
       await sendMetrics(
         data, 
@@ -304,12 +353,14 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
           sessionID,
           participantAge,
           participantGender,
+          screenSize,
+          deviceType,
         },
         gameState.currentLevel,
         1,
-        currentSet || 1
+        currentSet || 1,
+        true // session_completed: mark this session as complete
       );
-      console.log('Final metrics saved.');
     }
     catch (e) {
       console.error('Failed to save final data:', e);
@@ -347,19 +398,19 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
     });
   }, [trialList]);
 
-  /* ---------------- Auto-load once ready ---------------- */
+  /* ---------------- Auto-load once ready AND user state is loaded ---------------- */
 
   useEffect(() => {
-    if (ready) {
-      loadResources(taskType, userState?.game_set);
+    if (ready && !userStateLoading) {
+      loadResources(taskType, userState);
     }
-  }, [ready, loadResources, taskType, userState?.game_set]);
+  }, [ready, userStateLoading, loadResources, taskType, userState]);
 
   useEffect(() => {
-    if (ready && walkthroughComplete && prefetchDone && jsPsychPlugins && trialList.length && !running) {
+    if (ready && walkthroughComplete && prefetchDone && jsPsychPlugins && trialList.length && !running && completedTrials < trialList.length && !allSetsCompleted) {
       startExperiment();
     }
-  }, [ready, walkthroughComplete, prefetchDone, jsPsychPlugins, trialList, running]);
+  }, [ready, walkthroughComplete, prefetchDone, jsPsychPlugins, trialList, running, completedTrials, allSetsCompleted]);
 
   /* ---------------- Render ---------------- */
 
@@ -398,7 +449,10 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
 
       <CompletionPanel 
         isVisible={showCompletion} 
-        onFinish={() => window.location.href = '/'} 
+        onFinish={() => {
+          const prolificComplete = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY || 'https://app.prolific.com/submissions/complete';
+          window.location.href = prolificComplete;
+        }} 
       />
     </div>
   );

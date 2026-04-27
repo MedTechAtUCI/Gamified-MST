@@ -2,8 +2,8 @@ resource "aws_dynamodb_table" "metrics_table" {
   name         = "metrics-table"
   billing_mode = "PAY_PER_REQUEST"
 
-  hash_key  = "userId"       # partition key
-  range_key = "sessionTrial" # sort key
+  hash_key  = "userId"        # partition key
+  range_key = "session_trial" # sort key (session_id#trial_id)
 
   # Attribute definitions
   attribute {
@@ -12,7 +12,7 @@ resource "aws_dynamodb_table" "metrics_table" {
   }
 
   attribute {
-    name = "sessionTrial"
+    name = "session_trial"
     type = "S"
   }
 }

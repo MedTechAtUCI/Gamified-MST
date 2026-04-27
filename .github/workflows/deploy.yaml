@@ -28,6 +28,8 @@ jobs:
         run: |
           echo "NEXT_PUBLIC_CLOUDFRONT_URL=${{ secrets.NEXT_PUBLIC_CLOUDFRONT_URL }}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_AWS_METRICS_API=${{ secrets.NEXT_PUBLIC_AWS_METRICS_API }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY=${{ secrets.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_PROLIFIC_NO_CONSENT=${{ secrets.NEXT_PUBLIC_PROLIFIC_NO_CONSENT }}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm install
