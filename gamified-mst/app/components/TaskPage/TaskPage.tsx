@@ -30,6 +30,32 @@ type TaskPageProps = {
 };
 
 const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender }: TaskPageProps) => {
+  // Age validation check - must be 18 or older
+  useEffect(() => {
+    if (typeof participantAge !== 'undefined' && participantAge < 18) {
+      const noConsentUrl = process.env.NEXT_PUBLIC_PROLIFIC_NO_CONSENT || 'https://app.prolific.com/submissions/complete';
+      window.location.href = noConsentUrl;
+    }
+  }, [participantAge]);
+
+  // Calculate game week from completed sessions (week = completed sessions count + 1)
+  const getGameWeek = (userState: UserState | null | undefined): number => {
+    if (!userState?.sessions) return 1;
+    const completedCount = userState.sessions.filter((s) => s.completed).length;
+    return completedCount + 1;
+  };
+
+  // Get fresh game week by refetching user state
+  const getGameWeekFresh = async (): Promise<number> => {
+    try {
+      const fresh = await fetchUserState(prolificPID, sessionID);
+      return getGameWeek(fresh);
+    } catch (e) {
+      console.warn('Could not fetch fresh game week, returning 1:', e);
+      return 1;
+    }
+  };
+
   const [trialList, setTrialList] = useState<TrialData[]>([]);
   const [jsPsychPlugins, setJsPsychPlugins] = useState<JsPsychBundle | null>(null);
   const [sessionData, setSessionData] = useState<Session | null>(null);
@@ -156,19 +182,31 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   const loadResources = useCallback(
     async (task: TaskType, userStateData?: UserState | null | undefined) => {
       try {
+        // Refetch fresh user state to ensure we have latest session data
+        let freshUserState = userStateData;
+        try {
+          const latest = await fetchUserState(prolificPID, sessionID);
+          if (latest) {
+            freshUserState = latest;
+            setUserState(latest);
+          }
+        } catch (e) {
+          console.warn('Could not refetch user state, using cached:', e);
+        }
+
         // Check if all sets are completed
-        if (areAllSetsCompleted(userStateData)) {
+        if (areAllSetsCompleted(freshUserState)) {
           setAllSetsCompleted(true);
           setShowCompletion(true);
           return;
         }
 
         // Check if this session already has an assigned set
-        let set = getSessionSet(userStateData, sessionID);
+        let set = getSessionSet(freshUserState, sessionID);
         
         // If not assigned, get next available set
         if (!set) {
-          set = getNextSet(userStateData);
+          set = getNextSet(freshUserState);
         }
 
         // If getNextSet returns null, all sets are completed
@@ -258,16 +296,20 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
             setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 1000);
           }
         },
-        on_finish: (data: { response: number; rt: number }) => {
+        on_finish: (data: any) => {
           const labels = ['Old', 'Similar', 'New'];
+          
+          // Extract mst_type from multiple possible locations
+          let mstType = data.mst_type ?? data.type ?? trial.type;
+          
           const trialRecord = {
             participant_id: sessionData?.sid || 'guest',
             trial_id: trial.trial.toString(),
             image_id: trial.image,
             trial_type: 'image-button-response',
-            mst_type: (trial as any).mst_type,
-            lag: (trial as any).lag,
-            lure_bin: trial.bin?.toString() || '0',
+            mst_type: mstType,
+            lag: data.lag ?? (trial as any).lag,
+            lure_bin: (trial.bin ?? 0).toString(),
             participant_response: labels[data.response],
             correct_resp: trial.correct_resp,
             correct: trial.correct_resp === data.response,
@@ -316,12 +358,13 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
 
     try {
       const currentLevel = newLevel ?? gameState.currentLevel;
+      const currentGameWeek = await getGameWeekFresh();
       const payload = {
         trials: [trialData],
         user_id: prolificPID,
         session_id: sessionID,
         current_level: currentLevel,
-        game_week: 1,
+        game_week: currentGameWeek,
         set: currentSet || 1,
         ...(typeof participantAge !== 'undefined' ? { participant_age: participantAge } : {}),
         ...(participantGender ? { participant_gender: participantGender } : {}),
@@ -347,6 +390,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   const saveData = async (data: string) => {
     const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
     try {
+      const freshGameWeek = await getGameWeekFresh();
       await sendMetrics(
         data, 
         sessionData, 
@@ -361,7 +405,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
           deviceType,
         },
         gameState.currentLevel,
-        1,
+        freshGameWeek,
         currentSet || 1,
         true // session_completed: mark this session as complete
       );

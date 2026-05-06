@@ -8,6 +8,30 @@ table = dynamodb.Table(os.environ.get("DYNAMO_TABLE", "metrics-table"))
 state_table = dynamodb.Table(os.environ.get("USER_STATE_TABLE", "user-state-table"))
 
 
+def count_completed_sessions(user_id):
+    """
+    Count total completed sessions for a user across all session records.
+    """
+    try:
+        # Query all sessions for this user
+        response = state_table.query(
+            KeyConditionExpression="userId = :uid",
+            ExpressionAttributeValues={":uid": user_id},
+            ProjectionExpression="sessions"
+        )
+        
+        completed_count = 0
+        for item in response.get("Items", []):
+            sessions = item.get("sessions", [])
+            # Count sessions marked as completed
+            completed_count += sum(1 for s in sessions if s.get("completed"))
+        
+        return completed_count
+    except Exception as e:
+        print(f"Error counting completed sessions: {e}")
+        return 0
+
+
 def lambda_handler(event, context):
     headers = {
         "Access-Control-Allow-Origin": "*",
@@ -27,8 +51,12 @@ def lambda_handler(event, context):
         session_id = payload.get("session_id")
         curr_level = payload.get("current_level")
         game_set = payload.get("set")
-        week_of_study = payload.get("game_week")
         session_completed = payload.get("session_completed", False)
+
+        # Calculate week_of_study on backend based on completed sessions count
+        # Week = (number of completed sessions) + 1
+        completed_sessions_count = count_completed_sessions(user_id) if user_id else 0
+        week_of_study = completed_sessions_count + 1
 
         # Ensure numeric fields are the correct type
         if curr_level is not None:
@@ -46,6 +74,14 @@ def lambda_handler(event, context):
         # Ensure participant_age is an integer
         if participant_age is not None:
             participant_age = int(participant_age)
+        
+        # Validate age >= 18 (server-side enforcement)
+        if participant_age is not None and participant_age < 18:
+            return {
+                "statusCode": 400,
+                "headers": headers,
+                "body": json.dumps({"error": "Participant must be 18 years or older"})
+            }
 
         if user_id and session_id:
             # First, fetch current user state to preserve sessions array
@@ -81,30 +117,29 @@ def lambda_handler(event, context):
                 update_parts.append("device_type = :device")
                 expr_values[":device"] = device_type
 
-            # Handle session completion tracking
-            if session_completed:
-                # Update or create session record
-                session_record = {
-                    "sessionId": session_id,
-                    "set_number": game_set,
-                    "completed": True,
-                    "current_level": curr_level,
-                    "week_of_study": week_of_study
-                }
-                
-                # Check if session already exists in array
-                session_exists = False
-                for i, sess in enumerate(sessions):
-                    if sess.get("sessionId") == session_id:
-                        sessions[i] = session_record
-                        session_exists = True
-                        break
-                
-                if not session_exists:
-                    sessions.append(session_record)
-                
-                update_parts.append("sessions = :sessions")
-                expr_values[":sessions"] = sessions
+            # Always track session progress (not just at completion)
+            # Update or create session record with current state
+            session_record = {
+                "sessionId": session_id,
+                "set_number": game_set,
+                "completed": session_completed,  # True only when fully completed
+                "current_level": curr_level,
+                "week_of_study": week_of_study
+            }
+            
+            # Check if session already exists in array
+            session_exists = False
+            for i, sess in enumerate(sessions):
+                if sess.get("sessionId") == session_id:
+                    sessions[i] = session_record
+                    session_exists = True
+                    break
+            
+            if not session_exists:
+                sessions.append(session_record)
+            
+            update_parts.append("sessions = :sessions")
+            expr_values[":sessions"] = sessions
 
             state_table.update_item(
                 Key={"userId": user_id, "sessionId": session_id},

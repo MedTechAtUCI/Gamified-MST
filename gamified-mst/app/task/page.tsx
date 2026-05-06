@@ -1,12 +1,14 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import TaskPage from '@/app/components/TaskPage/TaskPage';
 import { TaskType } from '@/app/types/mst';
 
 function TaskContent() {
   const searchParams = useSearchParams();
+  const [isReady, setIsReady] = useState(false);
+
   const readStoredDemographics = () => {
     if (typeof window === 'undefined') {
       return { participantAge: undefined, participantGender: undefined };
@@ -24,7 +26,7 @@ function TaskContent() {
       };
 
       const age = Number(parsed.participantAge);
-      const validAge = Number.isFinite(age) && age > 18 ? age : undefined;
+      const validAge = Number.isFinite(age) && age >= 18 ? age : undefined;
       const normalizedGender = (parsed.participantGender || '').toLowerCase();
       const validGender = ['male', 'female', 'other'].includes(normalizedGender)
         ? normalizedGender
@@ -40,25 +42,32 @@ function TaskContent() {
   const taskType =
     (searchParams.get('mode') as TaskType) ?? 'Imbal2x3';
     
-  // Generate random ID if not provided (for testing without Prolific)
-  const generateRandomId = () => Math.random().toString(36).substring(2, 11);
-    
-  const prolificPID = 
-    searchParams.get('PROLIFIC_PID') ?? generateRandomId();
+  const prolificPID = searchParams.get('PROLIFIC_PID');
+  const sessionID = searchParams.get('SESSION_ID');
+  const studyID = searchParams.get('STUDY_ID') ?? 'default_study';
 
-  const studyID = 
-    searchParams.get('STUDY_ID') ?? 'default_study';
-
-  const sessionID = 
-    searchParams.get('SESSION_ID') ?? generateRandomId();
   const { participantAge, participantGender } = readStoredDemographics();
+
+  // Validate required parameters
+  useEffect(() => {
+    if (!prolificPID || !sessionID) {
+      const noConsentUrl = process.env.NEXT_PUBLIC_PROLIFIC_NO_CONSENT || 'https://app.prolific.com/submissions/complete';
+      window.location.href = noConsentUrl;
+      return;
+    }
+    setIsReady(true);
+  }, [prolificPID, sessionID]);
+
+  if (!isReady) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <TaskPage
       taskType={taskType}
-      prolificPID={prolificPID}
+      prolificPID={prolificPID!}
       studyID={studyID}
-      sessionID={sessionID}
+      sessionID={sessionID!}
       participantAge={participantAge}
       participantGender={participantGender}
     />

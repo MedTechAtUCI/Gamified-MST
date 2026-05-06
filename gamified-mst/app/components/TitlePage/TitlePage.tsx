@@ -90,6 +90,12 @@ export default function TitlePage() {
       return;
     }
 
+    // Require PROLIFIC_PID and SESSION_ID from URL params
+    if (!prolificPID || !sessionID) {
+      alert('Missing required Prolific parameters (PROLIFIC_PID and SESSION_ID)');
+      return;
+    }
+
     if (isTestMode) {
       window.sessionStorage.setItem(
         'mst_test_demographics',
@@ -103,9 +109,9 @@ export default function TitlePage() {
     }
 
     const params = new URLSearchParams({
-      PROLIFIC_PID: prolificPID || 'test_user',
-      SESSION_ID: sessionID || 'test_session',
-      STUDY_ID: studyID || 'test_study',
+      PROLIFIC_PID: prolificPID,
+      SESSION_ID: sessionID,
+      STUDY_ID: studyID || 'default_study',
       mode: 'Imbal2x3',
     });
     router.push(`/consent?${params.toString()}`);
