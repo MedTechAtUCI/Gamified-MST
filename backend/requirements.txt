@@ -1,2 +1,4 @@
 gdown
 python-dotenv
+simplejson
+boto3

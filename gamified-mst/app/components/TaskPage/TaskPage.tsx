@@ -242,7 +242,11 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         stimulus: `${CLOUDFRONT_URL}/${encodeURI(trial.image)}`,
         choices: ['Old', 'Similar', 'New'],
         prompt: `<p>Have you seen this before? Is it Old, Similar, or New?</p>`,
-        data: trial,
+        // Explicitly pass trial properties so they're included in jsPsych output
+        data: {
+          ...trial,
+          mst_type: trial.type,  // Alias for compatibility
+        },
         on_start: () => {
           const target = document.getElementById('jspsych-target');
           if (target) {

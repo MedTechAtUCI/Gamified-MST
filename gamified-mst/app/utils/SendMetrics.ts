@@ -26,6 +26,19 @@ export const sendMetrics = async (
         trials: trials.map((trial: any) => {
             const labels = ['Old', 'Similar', 'New'];
             
+            // Try to get MST properties from multiple locations (direct, nested in data, or defaults)
+            const getProperty = (propName: string, defaultValue: string) => {
+                // Try direct property
+                if (trial[propName] !== undefined && trial[propName] !== null) {
+                    return trial[propName].toString();
+                }
+                // Try nested in data object
+                if (trial.data && trial.data[propName] !== undefined && trial.data[propName] !== null) {
+                    return trial.data[propName].toString();
+                }
+                return defaultValue;
+            };
+            
             // Normalize image_id: strip CloudFront URL if present
             let imageId = trial.stimulus || '';
             if (imageId.startsWith('http')) {
@@ -35,17 +48,17 @@ export const sendMetrics = async (
             }
             
             return {
-                trial_id: trial.trial_index?.toString() || trial.trial?.toString() || '0',
+                trial_id: trial.trial_index?.toString() || getProperty('trial', '0'),
                 image_id: imageId,
                 trial_type: trial.trial_type,
-                mst_type: trial.type?.toString() || '0',
-                lag: trial.lag?.toString() || '-1',
-                lure_bin: trial.bin?.toString() || trial.lbin?.toString() || '0',
+                mst_type: getProperty('type', '0'),
+                lag: getProperty('lag', '-1'),
+                lure_bin: getProperty('bin', getProperty('lbin', '0')),
                 participant_response: labels[trial.response],
-                correct_resp: trial.correct_resp?.toString() || '0',
+                correct_resp: getProperty('correct_resp', '0'),
                 correct: trial.response === trial.correct_resp,
                 reaction_time_ms: trial.rt,
-                timestamp: trial.time_elapsed ? new Date(trial.time_elapsed).toISOString() : new Date().toISOString(),
+                timestamp: new Date().toISOString(),
             };
         }),
         user_id: prolific.prolificPID,
