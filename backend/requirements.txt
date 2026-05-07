@@ -2,3 +2,4 @@ gdown
 python-dotenv
 simplejson
 boto3
+pandas
