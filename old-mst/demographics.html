@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <!--
+  Author: Craig Stark
+
+  Collects demographic information and then advances to the next task in the list
+
+  8/30/23 (CELS): Added getID() to come up with a good sid
+  9/7/23 (CELS): Fixing order / trialindex
+  10/12/23 (CELS): Add browser info logging
+  10/23/23 (CELS): Multi-lang support using Honeycomb style language file  
+
+-->
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap:  'unsafe-inline' 'unsafe-eval' 
+    https://fonts.gstatic.com http://www.stark-labs.com/exp/jsPsych/mobile_cMST/append_log.php http://www.stark-labs.com/exp/jsPsych/mobile_cMST/write_data_file.php; 
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/css; media-src *; 
+  img-src 'self' data: content:;">
+
+  <script type="text/javascript" src="jatos.js"></script>
+  <script type="text/javascript" src="js/index.js"></script>
+  <script src="js/jspsych_731/dist/jspsych.js"></script>
+  <script src="js/jspsych_731/dist/plugin-survey-html-form.js"></script>
+  <script src="js/jquery-3.1.1.min.js"></script>
+  <script src="js/jspsych_731/dist/plugin-browser-check.js"></script>
+  <link rel="stylesheet" href="css/jspsych.css"></link>
+  <style>
+    .jspsych-display-element {
+      font-size: 200%;
+    }
+    .jspsych-btn {
+      font-size: 125%;
+    }
+  </style>
+</head>
+<body>
+
+</body>
+<script>
+function getID() {
+  // Try to get a reasonable ID code for this person
+  // URL > studySession > workerID
+  var sid=jatos.urlQueryParameters.sid;
+  if (sid == undefined) {
+    sid=jatos.studySessionData['sid'];
+  }
+  if (typeof sid == 'undefined') {
+    if (typeof jatos.workerId !== 'undefined') { // At least try the workerID 
+      sid = jatos.workerId;
+    }
+    else { sid=1234; }
+  }
+  return sid
+}
+
+function waitFor(conditionFunction) {
+  const poll = resolve => {
+  if(conditionFunction()) resolve();
+    else setTimeout(_ => poll(resolve), 400);
+  }
+  return new Promise(poll)
+}
+
+jatos.onLoad(async function() {
+  var sid=getID();
+  //console.log('In demog, sid= ' + sid);
+  var lang='en';
+  if (typeof jatos.studySessionData['lang'] !== 'undefined') {
+    lang=jatos.studySessionData['lang'];
+  }
+  if (jatos.studyJsonInput && typeof jatos.studyJsonInput['lang'] !== 'undefined' ) { 
+    lang=jatos.studyJsonInput['lang']
+  }
+  if (jatos.batchJsonInput && typeof jatos.batchJsonInput['lang'] !== 'undefined' ) { 
+    lang=jatos.batchJsonInput['lang']
+  }
+  // load honeycomb version of lang file
+  console.log('loading json lang')
+  var langfile='lang/omst_'+lang+'.json';
+  var json_prompts=null;
+  $.getJSON(langfile,function( data ) {
+    json_prompts=data;
+    console.debug(langfile + ' loaded...ish');
+  });
+  await waitFor(_ => json_prompts !== null);
+  console.log(json_prompts['task']['name'])
+  let prompts=json_prompts['demog']  // Load in this phase's section
+
+  var jsPsych = initJsPsych({
+    on_finish: function() {
+      var result = jsPsych.data.get().json();
+      var order=jatos.studySessionData["order"];
+      jatos.studySessionData["taskindex"] += 1;
+      var expdata = jsPsych.data.get().json();
+      if (typeof order === 'undefined') {
+        // We don't have an 'order' setup, so assume it's 1-N  (e.g., we didn't use the setup.html in this exp)
+        console.log('faking an order')
+        order=Array(jatos.componentList.length).fill().map((e,i)=>i+1);
+        jatos.studySessionData["taskindex"]=jatos.componentPos;
+      }
+      //jatos.submitResultData(result, jatos.startNextComponent);
+      if (typeof order === 'undefined' || order.length == jatos.studySessionData["taskindex"]) {         // we're done?
+        // Check if this came from SONA - should have URL.sid and .sona
+        if (typeof jatos.urlQueryParameters.sid === 'undefined' || typeof jatos.urlQueryParameters.sona === 'undefined' ||
+          typeof jatos.studyJsonInput['experiment_id'] === 'undefined' || typeof jatos.studyJsonInput['credit_token'] === 'undefined') {  // not SONA - just finish
+          jatos.submitResultData(expdata,jatos.endStudy);
+        }
+        else { // SONA - give credit
+          var redirect='https://uci.sona-systems.com/webstudy_credit.aspx?experiment_id='+jatos.studyJsonInput['experiment_id']+
+          '&credit_token='+jatos.studyJsonInput['credit_token']+'&survey_code='+jatos.urlQueryParameters.sid;
+          jatos.endStudyAndRedirect(redirect,expdata);
+        }
+      }
+      else { // submit data and start the next  
+        jatos.submitResultData(expdata, () => { jatos.startComponentByPos(order[jatos.studySessionData["taskindex"]]) });
+      }
+    }
+  });
+
+  let date = new Date(); 
+  jsPsych.data.addProperties({
+       subject: sid,
+       task: 'demographics',
+       date: date.toLocaleDateString(),
+       urlid: jatos.urlQueryParameters.sid,
+  });
+
+  var browserinfo = {
+    type: jsPsychBrowserCheck
+  };
+
+  var demogform = {
+    type: jsPsychSurveyHtmlForm,
+    preamble: prompts['preamble'],
+    html:'<div style="text-align: left; font-size: 16px; line-height: 110%"> <p>' +
+      '<p><b>' + prompts['age'] + '</b> <input name="age" type="text" required /></p>' +
+      '<p><b>' + prompts['gender']['prompt'] + ' </b>'+
+      '<br><input type="radio" id="male" name="gender" value="male" style="margin-left: 50px" required > <label for="male">'+prompts['gender']['m']+'</label> '+
+      '<br><input type="radio" id="female" name="gender" value="female" style="margin-left: 50px"  > <label for="female">'+prompts['gender']['f']+'</label> '+
+      '<p><b>'+ prompts['ethnicity']['prompt'] +' </b>' +
+      '<br><input type="radio" id="hispanic" name="ethnicity" value="hispanic" style="margin-left: 50px" required> <label for="hispanic">'+prompts['ethnicity']['h']+'</label>' +
+      '<br><input type="radio" id="nonhispanic" name="ethnicity" value="nonhispanic" style="margin-left: 50px"> <label for="nonhispanic">'+prompts['ethnicity']['nh']+'</label>' +
+      '<p><b>' + prompts['race']['prompt'] + '</b>' + 
+      '<br><input type="radio" id="nativeamerican" name="race" value="nativeamerican" style="margin-left: 50px" required> <label for="nativeamerican">'+prompts['race']['ai']+'</label>' +
+      '<br><input type="radio" id="asian" name="race" value="asian" style="margin-left: 50px"> <label for="asian">'+prompts['race']['a']+'</label> ' +
+      '<br><input type="radio" id="black" name="race" value="black" style="margin-left: 50px"> <label for="black">'+prompts['race']['b']+'</label> ' +
+      '<br><input type="radio" id="nativehawaiian" name="race" value="nativehawaiian" style="margin-left: 50px"> <label for="nativehawaiian">'+prompts['race']['nh']+'</label> ' +
+      '<br><input type="radio" id="white" name="race" value="white" style="margin-left: 50px"> <label for="white">'+prompts['race']['w']+'</label> ' +
+      '<br><input type="radio" id="more" name="race" value="more" style="margin-left: 50px"> <label for="more">'+prompts['race']['m']+'</label> ' +
+      '<p> <b>'+prompts['handedness']['prompt']+' </b> ' +
+      '<br><input type="radio" id="left" name="handedness" value="left" style="margin-left: 50px" required > <label for="left">'+prompts['handedness']['l']+' </label> ' +
+      '<br><input type="radio" id="right" name="handedness" value="right" style="margin-left: 50px"  > <label for="right"> '+prompts['handedness']['r']+' </label> ' +
+      '<br><input type="radio" id="ambi" name="handedness" value="ambi" style="margin-left: 50px"  > <label for="ambi"> '+prompts['handedness']['a']+' </label> ' +
+      '</div>'
+  }
+  
+  var timeline = [browserinfo, demogform];
+  jsPsych.run(timeline);
+
+  
+});
+</script>
+
+</html>

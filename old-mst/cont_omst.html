@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/css; media-src *; img-src 'self' https://starklab.bio.uci.edu data: content:; connect-src 'self' https://*.amazonaws.com https://starklab.bio.uci.edu;">
+  <script src="../js/sharedUtils.js"></script>
+  <script type="text/javascript" src="js/index.js"></script>
+  <script src="js/jquery-3.1.1.min.js"></script>
+  <script src="js/jspsych_731/dist/jspsych.js"></script>
+  <script src="js/jspsych_731/dist/plugin-html-keyboard-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-image-keyboard-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-html-button-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-image-button-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-video-button-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-video-keyboard-response.js"></script>
+  <script src="js/jspsych_731/dist/plugin-preload.js"></script>
+  <script src="js/jspsych_731/dist/plugin-browser-check.js"></script>
+  <link rel="stylesheet" href="css/jspsych.css"></link>
+  <style>
+    .jspsych-display-element { font-size: 200%; }
+    .jspsych-btn { font-size: 150%; }
+  </style>
+</head>
+<body></body>
+
+<script>
+function waitFor(conditionFunction) {
+  const poll = resolve => {
+    if(conditionFunction()) resolve();
+    else setTimeout(_ => poll(resolve), 400);
+  }
+  return new Promise(poll)
+}
+
+function invNormcdf(p) {
+  var a1 = -39.6968302866538, a2 = 220.946098424521, a3 = -275.928510446969;
+  var a4 = 138.357751867269, a5 = -30.6647980661472, a6 = 2.50662827745924;
+  var b1 = -54.4760987982241, b2 = 161.585836858041, b3 = -155.698979859887;
+  var b4 = 66.8013118877197, b5 = -13.2806815528857, c1 = -7.78489400243029E-03;
+  var c2 = -0.322396458041136, c3 = -2.40075827716184, c4 = -2.54973253934373;
+  var c5 = 4.37466414146497, c6 = 2.93816398269878, d1 = 7.78469570904146E-03;
+  var d2 = 0.32246712907004, d3 = 2.445134137143, d4 = 3.75440866190742;
+  var p_low = 0.02425, p_high = 1 - p_low;
+  var q, r, retVal;
+
+  if ((p < 0) || (p > 1)) { alert("NormSInv: Argument out of range."); retVal = 0; }
+  else if (p < p_low) { q = Math.sqrt(-2 * Math.log(p)); retVal = (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1); }
+  else if (p <= p_high) { q = p - 0.5; r = q * q; retVal = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q / (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1); }
+  else { q = Math.sqrt(-2 * Math.log(1 - p)); retVal = -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1); }
+  return retVal;
+}
+
+function leftFillNum(num, width){ return num.toString().padStart(width,0) }
+
+function getID() {
+  var sid = window.jatos.urlQueryParameters.sid;
+  if (!sid) { sid = window.jatos.studySessionData['sid']; }
+  if (!sid) { sid = 1234; }
+  return sid;
+}
+
+// Global variable mocks to replace JATOS runtime dependencies smoothly
+window.jatos = {
+  urlQueryParameters: { sid: new URLSearchParams(window.location.search).get('PROLIFIC_PID') || 'guest_user' },
+  studySessionData: { resp_mode: 'button', set: '1', trialorder: '1', subset: '1', twochoice: 0, selfpaced: 1 },
+  componentJsonInput: null,
+  batchSession: { defined: function() { return true; }, add: function(path, data) { console.log("Saved summary:", data); } }
+};
+
+(async function() {
+  var baseurl = 'https://starklab.bio.uci.edu/mst/'; 
+  var sid = getID();
+  var resp_mode = 'button';
+  var trialorder = '1';
+  var subset = '1';
+  var twochoice = 0;
+  var selfpaced = 1;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const awsMetricsAPI = urlParams.get('AWS_API');
+  const prolificPID = urlParams.get('PROLIFIC_PID') || sid;
+  const sessionID = urlParams.get('SESSION_ID') || 'default_session';
+  const urlFallbackSet = parseInt(urlParams.get('GAME_SET') || '1', 10);
+  
+  // Demographics from URL parameters (passed by OMSTTaskPage)
+  const participantAge = urlParams.get('PARTICIPANT_AGE') ? parseInt(urlParams.get('PARTICIPANT_AGE')) : undefined;
+  const participantGender = urlParams.get('PARTICIPANT_GENDER') || undefined;
+  const screenSize = `${window.innerWidth}x${window.innerHeight}`;
+  const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+
+  let startTrial = 0;
+  let gameSet = null;
+
+  // ==================== RESUME SESSION - READ SET FROM SESSIONS ARRAY ====================
+  const userState = await fetchUserState(awsMetricsAPI, prolificPID, sessionID);
+  
+  if (userState) {
+    startTrial = userState.current_level || 0;
+    
+    // Read set from existing session record in the sessions array
+    if (userState.sessions && userState.sessions.length > 0) {
+      const sessionRecord = userState.sessions.find(s => s.sessionId === sessionID);
+      if (sessionRecord && sessionRecord.set_number && sessionRecord.set_number > 0) {
+        gameSet = sessionRecord.set_number;
+        console.log(`Restored from DB: gameSet=${gameSet}, trial=${startTrial}`);
+      }
+    }
+    
+    // If no valid set found in DB, assign fresh one
+    if (!gameSet) {
+      gameSet = Math.floor(Math.random() * 5) + 1;
+      console.log(`No valid set in DB; assigned gameSet=${gameSet}`);
+    }
+  } else {
+    // Fresh session
+    gameSet = Math.floor(Math.random() * 5) + 1;
+    console.log(`Fresh session; assigned gameSet=${gameSet}`);
+  }
+  
+  // ==================== REDIRECT TO INSTRUCTIONS IF FRESH SESSION ====================
+  // If startTrial === 0 (fresh session) and instructionsCompleted flag not set, load instructions first
+  const instructionsCompleted = urlParams.get('instructionsCompleted') === 'true';
+  if (startTrial === 0 && !instructionsCompleted) {
+    console.log('Fresh session detected - redirecting to comprehensive instructions');
+    const instructionUrl = './cmst_instr_contOSN.html?' + window.location.search + '&instructionsCompleted=true';
+    window.location.href = instructionUrl;
+    // Don't continue past this point
+    return;
+  }
+  // ========================================================================================
+  
+  // Final sanity
+  if (isNaN(gameSet) || gameSet < 1 || gameSet > 5) {
+    gameSet = 1;
+  }
+  // ========================================================================================
+  
+  // Apply calculated configuration parameters directly to matching asset tracks
+  var stim_set = gameSet;
+  var orderfile = 'jsOrders/cMST_Imbal2x3_orders_' + stim_set + '_' + trialorder + '_' + subset + '.json';
+
+  console.log('Loading JSON trial order configuration from: ' + orderfile);
+  var trial_stim = null;
+  
+  $.getJSON(orderfile, function(data) {
+    trial_stim = data;
+    console.debug('Trial configuration definitions successfully parsed.');
+  }).fail(function() {
+    console.error("CRITICAL ERROR: Failed to load " + orderfile);
+  });
+
+  await waitFor(_ => trial_stim !== null);
+
+  const preload_fnames = new Array(trial_stim.length);
+  for (var i = 0; i < trial_stim.length; i++) {
+    trial_stim[i].image = baseurl + trial_stim[i].image.replace("Set ", "Set");
+    preload_fnames[i] = trial_stim[i].image;
+  }
+  
+  const preload_fnames_sliced = preload_fnames.slice(startTrial);
+  let trialsCompleted = startTrial;  // Initialize to startTrial so we track absolute completion count
+  var ntrials = trial_stim.length;
+  
+  // Per-trial progress wrapper using shared utility - matches gamified version exactly
+  async function saveTrialProgress(trialData) {
+    // Get the original trial info to access numeric type value
+    const trialIdx = trialData.trial_sequence_idx;
+    const originalTrialInfo = trial_stim[trialIdx];
+    
+    // Map response string to label
+    const responseMap = { 'o': 'Old', 's': 'Similar', 'n': 'New', null: 'none' };
+    const participantResponse = responseMap[trialData.resp] || 'none';
+    
+    // Build trial object matching gamified format EXACTLY
+    const trial = {
+      trial_id: originalTrialInfo?.trial?.toString() || trialIdx?.toString() || '0',
+      image_id: originalTrialInfo?.image || trialData.stimulus || '',
+      trial_type: trialData.trial_type || 'image-button-response',
+      mst_type: originalTrialInfo?.type,  // numeric: 0, 1, 2, or 3
+      lag: originalTrialInfo?.lag,  // numeric
+      lure_bin: (originalTrialInfo?.lbin || 0).toString(),  // string
+      participant_response: participantResponse,  // string label
+      correct_resp: originalTrialInfo?.correct_resp,  // numeric: 0, 1, or 2
+      correct: trialData.correct || false,
+      reaction_time_ms: trialData.rt || 0,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const payload = {
+      trials: [trial],
+      user_id: prolificPID,
+      session_id: sessionID,
+      current_level: trialsCompleted,
+      game_type: 'U',
+      set: gameSet,
+      ...(typeof participantAge !== 'undefined' ? { participant_age: parseInt(participantAge) || undefined } : {}),
+      ...(participantGender ? { participant_gender: participantGender } : {}),
+      ...(screenSize ? { screen_size: screenSize } : {}),
+      ...(deviceType ? { device_type: deviceType } : {}),
+    };
+    await saveProgress(awsMetricsAPI, payload);
+  }
+  // ========================================================================================
+  
+  let prompts = {
+    "button": {
+      "instr_choice": "OK",
+      "instr_prompt": "Welcome to the experiment.",
+      "threechoice": {
+        "instr_stim": "Please indicate whether the images are Old, Similar, or New.",
+        "trial_prompt": "Is this image Old, Similar, or New?",
+        "trial_choices": { "old": "Old", "sim": "Similar", "new": "New" }
+      },
+      "twochoice": {
+        "instr_stim": "Please indicate whether the images are Old or New.",
+        "trial_prompt": "Is this image Old or New?",
+        "trial_choices": { "old": "Old", "new": "New" }
+      }
+    },
+    "key": {
+      "instr_choice": " ",
+      "instr_prompt": "Press spacebar to begin.",
+      "threechoice": {
+        "instr_stim": "Press V for Old, B for Similar, and N for New.",
+        "trial_prompt": "Old (V), Similar (B), or New? (N)",
+        "trial_choices": { "old": "v", "sim": "b", "new": "n" }
+      },
+      "twochoice": {
+        "instr_stim": "Press V for Old and N for New.",
+        "trial_prompt": "Old (V) or New? (N)",
+        "trial_choices": { "old": "v", "new": "n" }
+      }
+    },
+    "ty": "Thank you for completing the task!"
+  };
+
+  var jsPsych = initJsPsych({
+    on_finish: function() {
+      var rawData = jsPsych.data.get().json(); 
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ 
+          type: 'OMST_RAW_COMPLETE',
+          payload: { rawJsPsychData: rawData }
+        }, window.location.origin);
+      } else {
+        jsPsych.data.displayData();
+      }
+    }
+  });
+
+  const phasename = 'oMSTCont';
+  jsPsych.data.addProperties({
+    task: phasename,
+    subject: sid,
+    set: stim_set,
+    selfpaced: selfpaced,
+    orderfile: orderfile
+  });
+
+  let choicekey = (twochoice === 1) ? 'twochoice' : 'threechoice';
+  var trial_choices = [];
+  if (twochoice === 1) {
+    trial_choices = [prompts[resp_mode]['twochoice']['trial_choices']['old'], prompts[resp_mode]['twochoice']['trial_choices']['new']];
+  } else {
+    trial_choices = [
+      prompts[resp_mode]['threechoice']['trial_choices']['old'], 
+      prompts[resp_mode]['threechoice']['trial_choices']['sim'], 
+      prompts[resp_mode]['threechoice']['trial_choices']['new']
+    ];
+  }
+
+  var instr1_trial = {  
+    type: (resp_mode === 'button' ? jsPsychHtmlButtonResponse : jsPsychHtmlKeyboardResponse),
+    choices: [prompts[resp_mode]['instr_choice']],
+    prompt: "<p>" + prompts[resp_mode]['instr_prompt'] + "</p>",
+    margin_horizontal: '40px', margin_vertical: '20px',
+    stimulus: "<p>" + prompts[resp_mode][choicekey]['instr_stim'] + "</p>",
+  };
+  
+  var tlv = [];
+  
+  // Build timeline variables ONLY for remaining trials (startTrial onward)
+  for (var i = startTrial; i < ntrials; i++) {
+    var trial_info = trial_stim[i];
+    let tr_type = 'foil';
+    let cresp = 'n';
+    if (trial_info.correct_resp == 0) { tr_type = 'target'; cresp = 'o'; } 
+    else if (trial_info.correct_resp == 1) { tr_type = 'lure'; cresp = (twochoice === 1) ? 'n' : 's'; }
+    
+    tlv.push({ 
+      stimulus: trial_info.image, 
+      data: { 
+        condition: tr_type, 
+        correct_response: cresp, 
+        lbin: trial_info.lbin || 0,
+        trial_sequence_idx: i  // Keep absolute index for tracking
+      } 
+    });
+  }
+
+  var test_trials = {
+    timeline_variables: tlv,
+    timeline: [{
+      type: (resp_mode === 'button' ? jsPsychImageButtonResponse : jsPsychImageKeyboardResponse),
+      prompt: "<p>" + prompts[resp_mode][choicekey]['trial_prompt'] + "</p>",
+      choices: trial_choices,
+      stimulus_duration: 2000,
+      trial_duration: (selfpaced === 1 ? null : 2500),
+      post_trial_gap: 500,
+      margin_horizontal: '40px', margin_vertical: '20px',
+      stimulus: jsPsych.timelineVariable('stimulus'),
+      data: jsPsych.timelineVariable('data'),
+      stimulus_height: 400,
+      stimulus_width: 400,
+      on_finish: function(data) {
+        let resp = null;
+        if (resp_mode === 'button') {
+          if (data.response == 0) { resp = 'o'; }
+          else if (data.response == 2) { resp = 'n'; }
+          else if (data.response == 1) { resp = (twochoice == 1 ? 'n' : 's'); }
+        } else {
+          if (data.response == 'v') { resp = 'o'; }
+          else if (data.response == 'b') { resp = 's'; }
+          else if (data.response == 'n') { resp = 'n'; }
+        }
+        data.correct = resp == data.correct_response;
+        data.resp = resp;
+        
+        let seq_idx = data.trial_sequence_idx !== undefined ? data.trial_sequence_idx : jsPsych.timelineVariable('data')().trial_sequence_idx;
+        trialsCompleted = Number(seq_idx) + 1;
+        
+        console.log(`✓ Trial ${trialsCompleted}/${ntrials} complete`);
+        saveTrialProgress(data);
+      }
+    }]
+  };
+
+  var debrief_block = {
+    type: jsPsychHtmlKeyboardResponse,
+    trial_duration: 2000,
+    stimulus: prompts['ty'],
+    on_finish: async function(data) {
+      let validtrials = jsPsych.data.get().filterCustom(function(t) { return t.resp !== null; });
+      let targets = validtrials.filter({condition: 'target'});
+      let lures = validtrials.filter({condition: 'lure'});
+      let foils = validtrials.filter({condition: 'foil'});
+      var retstr = "";
+
+      if (twochoice == 1) {
+        let corr_targs = targets.filter({correct: true});
+        let corr_lures = lures.filter({correct: true});
+        let corr_foils = foils.filter({correct: true});
+        let hits = Math.round(corr_targs.count() / (targets.count() || 1) * 100);
+        let cr_lure = Math.round(corr_lures.count() / (lures.count() || 1) * 100);
+        let cr_foil = Math.round(corr_foils.count() / (foils.count() || 1) * 100);
+        retstr = 'HR, ' + hits + ', CR-L, ' + cr_lure + ', CR-F, ' + cr_foil;
+      } else {
+        let rec = (targets.filter({resp: 'o'}).count() / (targets.count() || 1)) - (foils.filter({resp: 'o'}).count() / (foils.count() || 1));
+        let ldi = (lures.filter({resp: 's'}).count() / (lures.count() || 1)) - (foils.filter({resp: 's'}).count() / (foils.count() || 1));
+        retstr = 'REC, ' + rec.toFixed(3) + ', LDI, ' + ldi.toFixed(3);
+      }
+      
+      // ===== MIRROR GAMIFIED: Final completion POST with full data =====
+      try {
+        const allData = jsPsych.data.get().json();
+        const imageTrials = allData.filter((t) => t.trial_type === 'image-button-response' || t.trial_type === 'image-keyboard-response');
+        
+        console.log(`📊 Final submission: ${imageTrials.length} trials, session_completed=true, gameSet=${gameSet}, type=${typeof gameSet}`);
+        
+        const finalPayload = {
+          user_id: prolificPID,
+          session_id: sessionID,
+          current_level: trialsCompleted,
+          session_completed: true,
+          game_type: 'U',
+          set: gameSet,
+          ...(typeof participantAge !== 'undefined' ? { participant_age: parseInt(participantAge) || undefined } : {}),
+          ...(participantGender ? { participant_gender: participantGender } : {}),
+          ...(screenSize ? { screen_size: screenSize } : {}),
+          ...(deviceType ? { device_type: deviceType } : {}),
+          trials: imageTrials.map((trial) => {
+            const labels = ['Old', 'Similar', 'New'];
+            let imageId = trial.stimulus || '';
+            if (imageId.startsWith('http')) {
+              const match = imageId.match(/Set\d+\/[^?]+/);
+              imageId = match ? match[0] : imageId;
+            }
+            return {
+              trial_id: trial.trial_index?.toString() || '0',
+              image_id: imageId,
+              trial_type: trial.trial_type,
+              mst_type: trial.mst_type || trial.type || '0',
+              lag: trial.lag || '-1',
+              lure_bin: trial.lbin || trial.bin || '0',
+              participant_response: trial.response !== undefined ? labels[trial.response] : 'none',
+              correct_resp: trial.correct_resp || '0',
+              correct: trial.correct,
+              reaction_time_ms: trial.rt || 0,
+              timestamp: new Date().toISOString(),
+            };
+          })
+        };
+        await saveProgress(awsMetricsAPI, finalPayload);
+      } catch (e) {
+        console.error('Error submitting final data.');
+      }
+
+      if (window.parent) {
+        window.parent.postMessage({
+          type: 'OMST_RAW_COMPLETE',
+          payload: { summary: retstr, rawJsPsychData: jsPsych.data.get().json() }
+        }, window.location.origin);
+      }
+    }
+  };
+
+  var preload = {
+    type: jsPsychPreload,
+    images: preload_fnames_sliced,
+    show_progress_bar: true,
+    continue_after_error: true
+  };
+
+  var browserinfo = { type: jsPsychBrowserCheck };
+  
+  // Build timeline: include instructions only for NEW sessions (startTrial === 0)
+  var timeline = [browserinfo, preload];
+  if (startTrial === 0) {
+    timeline.push(instr1_trial);  // Show instructions only on first session
+  }
+  timeline.push(test_trials, debrief_block);
+  
+  jsPsych.run(timeline);
+})();
+</script>
+</html>
