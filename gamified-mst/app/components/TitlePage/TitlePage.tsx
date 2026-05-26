@@ -10,7 +10,7 @@ import mainTitle from '../../images/start_screen/text/main_title.png';
 import peterAnteater from '../../images/anteater/peter_anteater.png';
 import startBtn from '../../images/start_screen/buttons/start_button.png';
 
-export default function TitlePage() {
+export default function TitlePage({ route = 'gamified-mst' }: { route?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isTestMode = searchParams.get('test') === 'true';
@@ -28,7 +28,7 @@ export default function TitlePage() {
   const isAgeValid = Number.isFinite(parsedAge) && parsedAge >= 18;
   const canStart = anteaterClicked && isAgeValid && gender.trim() !== '';
 
-  // Load user data if prolific ID is available
+  // Load user data if prolific ID is available (gamified only)
   useEffect(() => {
     const loadProvidedParams = () => {
       const urlProlific = searchParams.get('PROLIFIC_PID');
@@ -39,17 +39,18 @@ export default function TitlePage() {
       if (urlSession) setSessionID(urlSession);
       if (urlStudy) setStudyID(urlStudy);
       
-      // If prolific ID provided, try to load user data
-      // Pass sessionID directly instead of using state (which hasn't updated yet)
-      if (urlProlific) {
-        loadUserData(urlProlific, urlSession || 'initial');
-      } else if (!isTestMode) {
-        setShowDemographicsForm(true);
+      // Only show demographics form for gamified version
+      if (route === 'gamified-mst') {
+        if (urlProlific) {
+          loadUserData(urlProlific, urlSession || 'initial');
+        } else if (!isTestMode) {
+          setShowDemographicsForm(true);
+        }
       }
     };
     
     loadProvidedParams();
-  }, [searchParams, isTestMode]);
+  }, [searchParams, isTestMode, route]);
 
   const loadUserData = async (prolificID: string, sessionID: string) => {
     setLoadingUserData(true);
@@ -86,8 +87,15 @@ export default function TitlePage() {
   };
 
   const handleStartGame = () => {
-    if (!canStart) {
-      return;
+    // For gamified, require demographics
+    if (route === 'gamified-mst') {
+      if (!canStart) {
+        return;
+      }
+      if (!isAgeValid || !gender.trim()) {
+        alert('Please provide valid age and gender');
+        return;
+      }
     }
 
     // Require PROLIFIC_PID and SESSION_ID from URL params
@@ -96,12 +104,8 @@ export default function TitlePage() {
       return;
     }
 
-    if (isTestMode) {
-      window.sessionStorage.setItem(
-        'mst_test_demographics',
-        JSON.stringify({ participantAge: parsedAge, participantGender: gender })
-      );
-    } else {
+    // Save demographics for gamified only
+    if (route === 'gamified-mst') {
       window.sessionStorage.setItem(
         'mst_test_demographics',
         JSON.stringify({ participantAge: parsedAge, participantGender: gender })
@@ -112,7 +116,7 @@ export default function TitlePage() {
       PROLIFIC_PID: prolificPID,
       SESSION_ID: sessionID,
       STUDY_ID: studyID || 'default_study',
-      mode: 'Imbal2x3',
+      route: route,
     });
     router.push(`/consent?${params.toString()}`);
   };
@@ -141,13 +145,14 @@ export default function TitlePage() {
       <button 
         className="startButton" 
         onClick={handleStartGame}
-        disabled={!canStart}
-        style={{ opacity: canStart ? 1 : 0.5, cursor: canStart ? 'pointer' : 'not-allowed' }}
+        disabled={route === 'gamified-mst' ? !canStart : !anteaterClicked}
+        style={{ opacity: (route === 'gamified-mst' ? canStart : anteaterClicked) ? 1 : 0.5, cursor: (route === 'gamified-mst' ? canStart : anteaterClicked) ? 'pointer' : 'not-allowed' }}
       >
         <img src={startBtn.src} alt="START" />
       </button>
 
-      {showDemographicsForm && (
+      {/* Gamified demographics form */}
+      {route === 'gamified-mst' && showDemographicsForm && (
         <div className="testModeOverlay">
           <div className="testModeModal">
             <h2>{loadingUserData ? 'Loading your profile...' : 'Please provide your information'}</h2>
@@ -246,7 +251,7 @@ export default function TitlePage() {
               </select>
             </div>
 
-            <button className="testModeSubmitBtn" onClick={handleStartGame} disabled={!canStart}>
+            <button className="testModeSubmitBtn" onClick={handleStartGame} disabled={route === 'gamified-mst' ? !canStart : !anteaterClicked}>
               Start Game
             </button>
           </div>

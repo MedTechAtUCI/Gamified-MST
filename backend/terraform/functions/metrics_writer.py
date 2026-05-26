@@ -52,6 +52,8 @@ def lambda_handler(event, context):
         curr_level = payload.get("current_level")
         game_set = payload.get("set")
         session_completed = payload.get("session_completed", False)
+        game_type = payload.get("game_type", "G")  # Default to 'G' (gamified)
+
 
         # Calculate week_of_study on backend based on completed sessions count
         # Week = (number of completed sessions) + 1
@@ -63,6 +65,8 @@ def lambda_handler(event, context):
             curr_level = int(curr_level)
         if game_set is not None:
             game_set = int(game_set)
+        else:
+            game_set = 0
         if week_of_study is not None:
             week_of_study = int(week_of_study)
 
@@ -93,12 +97,16 @@ def lambda_handler(event, context):
             sessions = current_state.get("sessions", [])
             
             # Build update expression and values
-            update_parts = ["current_level = :lvl", "week_of_study = :week", "game_set = :set"]
+            update_parts = ["current_level = :lvl", "week_of_study = :week"]
             expr_values = {
                 ":lvl": curr_level,
-                ":week": week_of_study,
-                ":set": game_set
+                ":week": week_of_study
             }
+            
+            # Always update game_set if provided (both variants send 'set' field)
+            if game_set is not None:
+                update_parts.append("game_set = :set")
+                expr_values[":set"] = game_set
 
             # Always update demographics if provided
             if participant_age is not None:
@@ -117,12 +125,26 @@ def lambda_handler(event, context):
                 update_parts.append("device_type = :device")
                 expr_values[":device"] = device_type
 
+            if game_type:
+                update_parts.append("game_type = :game_type")
+                expr_values[":game_type"] = game_type
+
             # Always track session progress (not just at completion)
             # Update or create session record with current state
+            # NECESSARY!!! If session already exists, preserve its set_number unless new one is provided
+            existing_session = None
+            for sess in sessions:
+                if sess.get("sessionId") == session_id:
+                    existing_session = sess
+                    break
+            
+            # Use new game_set if provided, otherwise preserve existing
+            final_set = game_set if game_set is not None else (existing_session.get("set_number") if existing_session else None)
+            
             session_record = {
                 "sessionId": session_id,
-                "set_number": game_set,
-                "completed": session_completed,  # True only when fully completed
+                "set_number": final_set,
+                "completed": session_completed,
                 "current_level": curr_level,
                 "week_of_study": week_of_study
             }
@@ -187,7 +209,7 @@ def lambda_handler(event, context):
                     
                     item = {
                         "userId": user_id,
-                        "session_trial": f"{session_id}#{trial_id}",
+                        "session_trial": f"{session_id}#{trial_id}#{game_type}",
                         "trial_id": trial_id_int,
                         "image_id": image_id,
                         "trial_type": trial.get("trial_type"),
@@ -201,6 +223,7 @@ def lambda_handler(event, context):
                         "timestamp": trial.get("timestamp"),
                         "participant_age": participant_age,
                         "participant_gender": participant_gender,
+                        "game_type": game_type,
                     }
 
                     batch.put_item(Item=item)

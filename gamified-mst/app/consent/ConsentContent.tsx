@@ -61,16 +61,16 @@ export default function ConsentContent() {
         const prolificPID = searchParams.get('PROLIFIC_PID') || 'test_user';
         const sessionID = searchParams.get('SESSION_ID') || 'test_session';
         const studyID = searchParams.get('STUDY_ID') || 'test_study';
-        const mode = searchParams.get('mode') || 'Imbal2x3';
+        const route = searchParams.get('route') || 'gamified-mst'; // Default to gamified
 
         const params = new URLSearchParams({
           PROLIFIC_PID: prolificPID,
           SESSION_ID: sessionID,
           STUDY_ID: studyID,
-          mode: mode,
+          consented: 'true',
         });
 
-        router.push(`/task?${params.toString()}`);
+        router.push(`/${route}?${params.toString()}`);
       }
     };
 

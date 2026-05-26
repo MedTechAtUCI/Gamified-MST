@@ -18,7 +18,8 @@ export const sendMetrics = async (
     currentLevel: number,
     gameWeek: number,
     gameSet: number,
-    sessionCompleted: boolean = false
+    sessionCompleted: boolean = false,
+    gameType: 'G' | 'U' = 'G'
 ) => {
 
     const trials = JSON.parse(JsPsychData).filter((t: any) => t.trial_type === 'image-button-response');
@@ -67,6 +68,7 @@ export const sendMetrics = async (
         game_week: gameWeek,
         set: gameSet,
         session_completed: sessionCompleted,
+        game_type: gameType,
         ...(typeof prolific.participantAge !== 'undefined' ? { participant_age: prolific.participantAge } : {}),
         ...(prolific.participantGender ? { participant_gender: prolific.participantGender } : {}),
         ...(prolific.screenSize ? { screen_size: prolific.screenSize } : {}),

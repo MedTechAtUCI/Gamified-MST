@@ -27,9 +27,11 @@ type TaskPageProps = {
   sessionID: string;
   participantAge?: number;
   participantGender?: string;
+  gameSet?: number;
+  gameWeek?: number;
 };
 
-const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender }: TaskPageProps) => {
+const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender, gameSet: propGameSet, gameWeek: propGameWeek }: TaskPageProps) => {
   // Age validation check - must be 18 or older
   useEffect(() => {
     if (typeof participantAge !== 'undefined' && participantAge < 18) {
@@ -64,7 +66,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   const [currentSet, setCurrentSet] = useState<number | null>(null);
   const [walkthroughComplete, setWalkthroughComplete] = useState<boolean>(false);
   const [prefetchDone, setPrefetchDone] = useState<boolean>(false);
-  const [outfitUnlockNotification, setOutfitUnlockNotification] = useState<{ show: boolean; outfit: number }>({ show: false, outfit: 0 });
+  // const [outfitUnlockNotification, setOutfitUnlockNotification] = useState<{ show: boolean; outfit: number }>({ show: false, outfit: 0 });
   const [completedTrials, setCompletedTrials] = useState(0); // Track completed trials to sync with gamestate
   const [prevOutfitIndex, setPrevOutfitIndex] = useState(-1); // Track previous outfit to detect unlocks
   const [showCompletion, setShowCompletion] = useState<boolean>(false); // Show completion panel at end
@@ -123,18 +125,20 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   }, [completedTrials, trialList.length]);
 
   // Check for outfit unlock when level changes
+  // NOTE: Outfit notifications disabled - progress timeline shows outfit progress visually
+  // Notifications during trials were found to be distracting per participant feedback
   useEffect(() => {
     const newOutfitIndex = gameState.getCurrentOutfitIndex(NUM_OUTFITS);
-    if (newOutfitIndex > prevOutfitIndex && prevOutfitIndex >= 0) {
-      // Delay showing notification until image loading phase (4s after trial starts)
-      setTimeout(() => {
-        setOutfitUnlockNotification({ show: true, outfit: newOutfitIndex + 1 });
-        setTimeout(() => {
-          setOutfitUnlockNotification({ show: false, outfit: 0 });
-        }, 2000);
-      }, 4000);
-    }
     setPrevOutfitIndex(newOutfitIndex);
+    // Uncomment below to re-enable outfit unlock notifications during trials
+    // if (newOutfitIndex > prevOutfitIndex && prevOutfitIndex >= 0) {
+    //   setTimeout(() => {
+    //     setOutfitUnlockNotification({ show: true, outfit: newOutfitIndex + 1 });
+    //     setTimeout(() => {
+    //       setOutfitUnlockNotification({ show: false, outfit: 0 });
+    //     }, 2000);
+    //   }, 4000);
+    // }
   }, [gameState.currentLevel, prevOutfitIndex]);
 
   // Save progress to persistent storage whenever trials are completed
@@ -168,13 +172,9 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
   /* ---------------- Load bins ---------------- */
 
   const loadBins = useCallback(async (setNumber: number): Promise<number[]> => {
-    const fileName = `Set${setNumber}_bins.txt`;
-    const encodedFileName = encodeURIComponent(fileName);
-    const text = await (await fetch(encodedFileName)).text();
-    return text
-      .trim()
-      .split('\n')
-      .map((line) => Number(line.split('\t')[1]));
+    // Bins are now loaded from the JSON file itself (lbin field), so we return empty array
+    // The actual bins will be assigned from trial.lbin in loadResources
+    return [];
   }, []);
 
   /* ---------------- Load task resources ---------------- */
@@ -206,15 +206,15 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         
         // If not assigned, get next available set
         if (!set) {
-          set = getNextSet(freshUserState);
+          set = getNextSet(freshUserState) || propGameSet || 1;
         }
 
-        // If getNextSet returns null, all sets are completed
+        // If still no set, default to 1
         if (!set) {
-          setAllSetsCompleted(true);
-          setShowCompletion(true);
-          return;
+          set = 1;
         }
+        
+        console.log('Loading task with set:', set, 'task:', task, 'filePath will be:', `/jsOrders/cMST_${task}_orders_${set}_1_1.json`);
         
         setCurrentSet(set);
 
@@ -234,7 +234,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
             ...trial,
             image: finalPath,
             set,
-            bin: loadedBins[index],
+            bin: ((trial as any).lbin ?? loadedBins[index] ?? 0) as number,
           };
         });
 
@@ -294,6 +294,19 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
             // Lock buttons for 1s
             target.classList.add('jspsych-book--btn-locked');
             setTimeout(() => target.classList.remove('jspsych-book--btn-locked'), 1000);
+          }
+
+          // Verify image loaded successfully by checking actual img element
+          const imgElement = target?.querySelector('img.jspsych-image') as HTMLImageElement;
+          if (imgElement && !imgElement.complete) {
+            // Image still loading, set up error handler
+            imgElement.onerror = () => {
+              console.error(`Image failed to load: ${trial.image}`);
+              const prompt = target?.querySelector('.jspsych-prompt');
+              if (prompt) {
+                prompt.innerHTML = '<p style="color: red;">⚠️ Image failed to load. Please refresh the page and try again.</p>';
+              }
+            };
           }
         },
         on_finish: (data: any) => {
@@ -407,7 +420,8 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         gameState.currentLevel,
         freshGameWeek,
         currentSet || 1,
-        true // session_completed: mark this session as complete
+        true, // session_completed: mark this session as complete
+        'G'
       );
     }
     catch (e) {
@@ -415,7 +429,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
     }
   };
 
-  /* ---------------- Prefetch images during walkthrough ---------------- */
+  /* ---------------- Prefetch images during walkthrough with retry logic ---------------- */
 
   useEffect(() => {
     if (!trialList.length) return;
@@ -428,22 +442,40 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
     }
 
     let settled = 0;
-    let failed = 0;
+    const failedImages = new Map<string, number>(); // Track retry count per image
     const total = trialList.length;
+    const MAX_RETRIES = 2;
 
-    trialList.forEach((t) => {
+    const attemptLoad = (trial: TrialData, retryCount = 0) => {
       const img = new Image();
+      const imageUrl = `${CLOUDFRONT_URL}/${encodeURI(trial.image)}`;
+      
       img.onload = () => {
         settled++;
-        if (settled + failed === total) setPrefetchDone(true);
+        failedImages.delete(trial.image);
+        if (settled >= total) setPrefetchDone(true);
       };
+      
       img.onerror = () => {
-        console.warn(`Failed to prefetch image: ${t.image}`);
-        failed++;
-        if (settled + failed === total) setPrefetchDone(true);
+        const currentRetries = failedImages.get(trial.image) || 0;
+        
+        if (currentRetries < MAX_RETRIES) {
+          // Retry after short delay
+          failedImages.set(trial.image, currentRetries + 1);
+          console.warn(`Retrying image (${currentRetries + 1}/${MAX_RETRIES}): ${trial.image}`);
+          setTimeout(() => attemptLoad(trial, currentRetries + 1), 500);
+        } else {
+          // Final failure - log but continue
+          console.error(`Failed to prefetch after ${MAX_RETRIES} retries: ${trial.image}`);
+          settled++;
+          if (settled >= total) setPrefetchDone(true);
+        }
       };
-      img.src = `${CLOUDFRONT_URL}/${encodeURI(t.image)}`;
-    });
+      
+      img.src = imageUrl;
+    };
+
+    trialList.forEach((trial) => attemptLoad(trial));
   }, [trialList]);
 
   /* ---------------- Auto-load once ready AND user state is loaded ---------------- */
@@ -452,7 +484,7 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
     if (ready && !userStateLoading) {
       loadResources(taskType, userState);
     }
-  }, [ready, userStateLoading, loadResources, taskType, userState]);
+  }, [ready, userStateLoading, loadResources, taskType]);
 
   useEffect(() => {
     if (ready && walkthroughComplete && prefetchDone && jsPsychPlugins && trialList.length && !running && completedTrials < trialList.length && !allSetsCompleted) {
@@ -489,11 +521,11 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         />
       )}
 
-      {outfitUnlockNotification.show && (
+      {/* {outfitUnlockNotification.show && (
         <div className="outfit-unlock-banner">
           <p>Outfit {outfitUnlockNotification.outfit} Unlocked!</p>
         </div>
-      )}
+      )} */}
 
       <CompletionPanel 
         isVisible={showCompletion} 

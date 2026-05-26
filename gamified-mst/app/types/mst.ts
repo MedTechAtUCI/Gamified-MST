@@ -1,4 +1,4 @@
-export type TaskType = 'Flatx2' | 'Imbal2' | 'Imbal2x3'; // Either Flatx2, Imbal2, or Imbal2x3
+export type TaskType = 'Imbal2x3'; // Only Imbal2x3 is currently used (sets 1-5, _1_1 variant only)
 
 export type JsPsychInit = typeof import('jspsych')['initJsPsych'];
 export type PreloadPlugin = typeof import('@jspsych/plugin-preload')['default'];

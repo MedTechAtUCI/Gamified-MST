@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/app/components/TaskPage/TaskPage.css";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Gamified MST",
+  title: "The Mneumonic Similarity Task (MST)",
   description: "A cognitive task to assess memory performance using Next.js and jsPsych.",
 };
 
@@ -28,7 +29,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Suspense fallback={
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '100vh',
+            fontFamily: 'sans-serif',
+            color: '#666'
+          }}>
+            Loading task framework...
+          </div>
+        }>
+          {children}
+        </Suspense>
       </body>
     </html>
   );

@@ -37,7 +37,8 @@ Revised: November 20, 2019 (CELS) for Cordova
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/css; media-src *; 
     img-src 'self' data: content:;">
 
-  <script type="text/javascript" src="jatos.js"></script>
+  <!-- <script type="text/javascript" src="jatos.js"></script> -->
+  <script src="../js/sharedUtils.js"></script>
   <script type="text/javascript" src="js/index.js"></script>
   <script src="js/jquery-3.1.1.min.js"></script>
   <script src="js/jspsych_731/dist/jspsych.js"></script>
@@ -57,6 +58,13 @@ Revised: November 20, 2019 (CELS) for Cordova
 </head>
 <script>
 
+// Global variable mocks to replace JATOS runtime dependencies smoothly
+window.jatos = {
+  urlQueryParameters: { sid: new URLSearchParams(window.location.search).get('PROLIFIC_PID') || 'guest_user' },
+  studySessionData: { resp_mode: 'button', set: '1', trialorder: '1', subset: '1', twochoice: 0, selfpaced: 1 },
+  componentJsonInput: null,
+  batchSession: { defined: function() { return true; }, add: function(path, data) { console.log("Saved summary:", data); } }
+};
 
 function waitFor(conditionFunction) {
   const poll = resolve => {
@@ -83,7 +91,7 @@ function getID() {
   return sid
 }
 
-jatos.onLoad(async function() {
+(async function() {
   const phasename='cmst_instr_contOSN';
   var sid=getID();
   var resp_mode='button';
@@ -111,47 +119,31 @@ jatos.onLoad(async function() {
   var json_prompts=null;
   $.getJSON(langfile,function( data ) {
     json_prompts=data;
-    console.debug(langfile + ' loaded...ish');
+  }).fail(function(jqxhr, textStatus, errorThrown) {
+    langfile='lang/omst_en.json';
+    $.getJSON(langfile,function( data ) {
+      json_prompts=data;
+    }).fail(function() {
+      json_prompts = { 
+        task: { name: 'Instructions' }, 
+        instructions: { 
+          txt0: 'Instructions',
+          end: 'Instructions complete. Click OK to begin the task.',
+          button: { instr_choice: 'OK', prompt0: 'Ready?', trial_choices: { old: 'Old', sim: 'Similar', new: 'New' } },
+          key: { instr_choice: ' ', prompt0: 'Press spacebar', trial_choices: { old: 'v', sim: 'b', new: 'n' } }
+        } 
+      };
+    });
   });
   await waitFor(_ => json_prompts !== null);
   console.log(json_prompts['task']['name'])
   let prompts=json_prompts['instructions']; // Load in this phase's section
 
   var jsPsych = initJsPsych({on_finish: function() {
-      if (0) { jsPsych.data.displayData(); }
-      else {
-        var order=jatos.studySessionData["order"];
-        jatos.studySessionData["taskindex"] += 1;
-        if (typeof order === 'undefined') {
-          // We don't have an 'order' setup, so assume it's 1-N
-          console.log('faking an order')
-          order=Array(jatos.componentList.length).fill().map((e,i)=>i+1);
-          jatos.studySessionData["taskindex"]=jatos.componentPos;
-          //console.log(order);
-          //console.log(jatos.studySessionData["taskindex"]);
-        }
-        var expdata = jsPsych.data.get().json();
-        // Submit results to JATOS and queue the end or next task
-        if (typeof order === 'undefined' || order.length == jatos.studySessionData["taskindex"]) { 
-          // we're done
-          // Check if this came from SONA - should have URL.sid and .sona
-          if (typeof jatos.urlQueryParameters.sid === 'undefined' || typeof jatos.urlQueryParameters.sona === 'undefined' ||
-              typeof jatos.studyJsonInput['experiment_id'] === 'undefined' || typeof jatos.studyJsonInput['credit_token'] === 'undefined') {
-            jatos.submitResultData(expdata,jatos.endStudy);
-          }
-          else {
-            var redirect='https://uci.sona-systems.com/webstudy_credit.aspx?experiment_id='+jatos.studyJsonInput['experiment_id']+
-              '&credit_token='+jatos.studyJsonInput['credit_token']+'&survey_code='+jatos.urlQueryParameters.sid;
-            jatos.endStudyAndRedirect(redirect,expdata);
-          }
-        }
-        else {
-          // submit and start the next
-          jatos.submitResultData(expdata, () => { jatos.startComponentByPos(order[jatos.studySessionData["taskindex"]]) });
-        }
-      }
-    }
-  });
+      // Redirect back to cont_omst.html after instructions complete
+      // instructionsCompleted flag is already in the URL params from the redirect
+      window.location.href = './cont_omst.html?' + window.location.search;
+  }});
   
   jsPsych.data.addProperties({
     task: phasename,
@@ -299,7 +291,7 @@ jatos.onLoad(async function() {
   jsPsych.run(timeline);
     
   
-});
+})();
 </script>
 
 </html>
