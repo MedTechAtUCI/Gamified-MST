@@ -1,3 +1,7 @@
+<!--
+  Original Author Credits: Craig Stark
+-->
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -107,12 +111,12 @@ window.jatos = {
     
     // If no valid set found in DB, assign fresh one
     if (!gameSet) {
-      gameSet = Math.floor(Math.random() * 5) + 1;
+      gameSet = urlFallbackSet || (Math.floor(Math.random() * 5) + 1);
       console.log(`No valid set in DB; assigned gameSet=${gameSet}`);
     }
   } else {
     // Fresh session
-    gameSet = Math.floor(Math.random() * 5) + 1;
+    gameSet = urlFallbackSet || (Math.floor(Math.random() * 5) + 1);
     console.log(`Fresh session; assigned gameSet=${gameSet}`);
   }
   
