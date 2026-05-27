@@ -14,11 +14,11 @@ import ProgressTimeline from './ProgressTimeline';
 import CompletionPanel from './CompletionPanel';
 import Walkthrough from '../TitlePage/Walkthrough';
 import { useGameState } from '@/app/hooks/useGameState';
-import 'jspsych/css/jspsych.css';
-import './TaskPage.css';
 import { sendMetrics } from '@/app/utils/SendMetrics';
 import { fetchUserState, UserState } from '@/app/utils/FetchUserState';
 import { getSessionSet, getNextSet, isSessionCompleted, areAllSetsCompleted } from '@/app/utils/SetAssignment';
+
+import './TaskPage.css';
 
 type TaskPageProps = {
   taskType: TaskType;
@@ -27,11 +27,14 @@ type TaskPageProps = {
   sessionID: string;
   participantAge?: number;
   participantGender?: string;
+  participantEthnicity?: string;
+  participantRace?: string;
+  participantHandedness?: string;
   gameSet?: number;
   gameWeek?: number;
 };
 
-const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender, gameSet: propGameSet, gameWeek: propGameWeek }: TaskPageProps) => {
+const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, gameSet: propGameSet, gameWeek: propGameWeek }: TaskPageProps) => {
   // Age validation check - must be 18 or older
   useEffect(() => {
     if (typeof participantAge !== 'undefined' && participantAge < 18) {
@@ -206,7 +209,12 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         
         // If not assigned, get next available set
         if (!set) {
-          set = getNextSet(freshUserState) || propGameSet || 1;
+          if (freshUserState?.game_set) {
+            set = freshUserState.game_set;
+          }
+          else {
+            set = getNextSet(freshUserState) || propGameSet || 1;
+          }
         }
 
         // If still no set, default to 1
@@ -378,9 +386,13 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         session_id: sessionID,
         current_level: currentLevel,
         game_week: currentGameWeek,
+        game_type: 'G',
         set: currentSet || 1,
         ...(typeof participantAge !== 'undefined' ? { participant_age: participantAge } : {}),
         ...(participantGender ? { participant_gender: participantGender } : {}),
+        ...(participantEthnicity ? { participant_ethnicity: participantEthnicity } : {}),
+        ...(participantRace ? { participant_race: participantRace } : {}),
+        ...(participantHandedness ? { participant_handedness: participantHandedness } : {}),
         ...(screenSize ? { screen_size: screenSize } : {}),
         ...(deviceType ? { device_type: deviceType } : {}),
       };
@@ -414,6 +426,9 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
           sessionID,
           participantAge,
           participantGender,
+          participantEthnicity,
+          participantRace,
+          participantHandedness,
           screenSize,
           deviceType,
         },

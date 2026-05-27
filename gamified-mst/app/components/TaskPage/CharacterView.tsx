@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+
 import './CharacterView.css';
 
 interface Outfit {

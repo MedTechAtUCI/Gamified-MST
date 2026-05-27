@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import './ProgressTimeline.css';
 
 interface ProgressTimelineProps {

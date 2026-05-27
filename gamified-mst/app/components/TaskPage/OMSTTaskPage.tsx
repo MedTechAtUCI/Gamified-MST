@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { sendMetrics } from '@/app/utils/SendMetrics';
 
 type OMSTaskPageProps = {
@@ -9,22 +9,63 @@ type OMSTaskPageProps = {
   sessionID: string;
   participantAge?: number;
   participantGender?: string;
+  participantEthnicity?: string;
+  participantRace?: string;
+  participantHandedness?: string;
   gameSet?: number;
   gameWeek?: number;
 };
 
-export default function OMSTaskPage({ prolificPID, studyID, sessionID, participantAge, participantGender, gameSet, gameWeek }: OMSTaskPageProps) {
+export default function OMSTaskPage({ 
+  prolificPID, 
+  studyID, 
+  sessionID, 
+  participantAge, 
+  participantGender, 
+  participantEthnicity,
+  participantRace,
+  participantHandedness,
+  gameSet, 
+  gameWeek 
+}: OMSTaskPageProps) {
+
+  const [extraParams, setExtraParams] = useState('');
+
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem('mst_test_demographics');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        let queryStr = '';
+        
+        if (parsed.participantEthnicity) queryStr += `&PARTICIPANT_ETHNICITY=${encodeURIComponent(parsed.participantEthnicity)}`;
+        if (parsed.participantRace) queryStr += `&PARTICIPANT_RACE=${encodeURIComponent(parsed.participantRace)}`;
+        if (parsed.participantHandedness) queryStr += `&PARTICIPANT_HANDEDNESS=${encodeURIComponent(parsed.participantHandedness)}`;
+        
+        // Dynamic fallbacks strictly computed here
+        const finalAge = participantAge || parsed.participantAge;
+        const finalGender = participantGender || parsed.participantGender;
+        
+        if (finalAge) queryStr += `&PARTICIPANT_AGE=${encodeURIComponent(finalAge)}`;
+        if (finalGender) queryStr += `&PARTICIPANT_GENDER=${encodeURIComponent(finalGender)}`;
+        
+        setExtraParams(queryStr);
+      }
+    } catch (e) {
+      console.warn("Failed to parse demographics from session storage", e);
+    }
+  }, [participantAge, participantGender, participantEthnicity, participantRace, participantHandedness]); // Stripped back dependencies to prevent infinite loops
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      // Security Check
       if (event.origin !== window.location.origin) return;
 
       if (event.data.type === 'OMST_RAW_COMPLETE') {        
         const { rawJsPsychData } = event.data.payload;
         const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API || '';
+        
         const mockSessionData = {
-          sid: prolificPID || 'guest',
+          sid: prolificPID,
           cond: 0,
           order: [5, 6],
           set_omst: gameSet || 1,
@@ -33,21 +74,11 @@ export default function OMSTaskPage({ prolificPID, studyID, sessionID, participa
           resp_mode: 'button' as const,
         };
 
-        // Ensure data is formatted as a stringified JSON array
         const finalizedDataString = typeof rawJsPsychData === 'string' 
           ? rawJsPsychData 
           : JSON.stringify(rawJsPsychData);
 
-        let totalTrials = 256;
-        try {
-          const parsed = typeof rawJsPsychData === 'string' ? JSON.parse(rawJsPsychData) : rawJsPsychData;
-          if (Array.isArray(parsed)) {
-            const imageTrials = parsed.filter((t: any) => t.trial_type === 'image-button-response');
-            if (imageTrials.length > 0) totalTrials = imageTrials.length;
-          }
-        } catch (e) {
-          console.warn("Could not calculate dynamic trial lengths, defaulting to 256", e);
-        }
+        const stored = JSON.parse(window.sessionStorage.getItem('mst_test_demographics') || '{}');
 
         try {
           await sendMetrics(
@@ -58,34 +89,38 @@ export default function OMSTaskPage({ prolificPID, studyID, sessionID, participa
               prolificPID,
               studyID,
               sessionID,
-              participantAge,
-              participantGender,
+              participantAge: participantAge || stored.participantAge,
+              participantGender: participantGender || stored.participantGender,
+              participantEthnicity: stored.participantEthnicity,
+              participantRace: stored.participantRace,
+              participantHandedness: stored.participantHandedness,
               screenSize: `${window.innerWidth}x${window.innerHeight}`,
               deviceType: window.innerWidth < 768 ? 'mobile' : 'desktop',
             },
-            totalTrials, 
+            256, 
             gameWeek ?? 1,           
             gameSet ?? 1,           
             true,
             'U'
           );
-          const prolificComplete = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY || 'https://app.prolific.com/submissions/complete';
-          window.location.href = prolificComplete;
+          
+          window.location.href = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY || 'https://app.prolific.com/submissions/complete';
 
         } catch (error) {
-          alert("There was an error saving your data. Please do not close this window and contact the researcher.");
+          console.error("Save Error:", error);
+          alert("There was an error saving your data. Please contact the researcher.");
         }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [prolificPID, studyID, sessionID, participantAge, participantGender, gameSet, gameWeek]);
+  }, [prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, gameSet, gameWeek]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#fff' }}>
       <iframe 
-        src={`/old-mst/cont_omst.html?PROLIFIC_PID=${prolificPID}&STUDY_ID=${studyID}&SESSION_ID=${sessionID}&PARTICIPANT_AGE=${participantAge || ''}&PARTICIPANT_GENDER=${participantGender || ''}&AWS_API=${encodeURIComponent(process.env.NEXT_PUBLIC_AWS_METRICS_API || '')}&GAME_SET=${gameSet || 1}&GAME_WEEK=${gameWeek || 1}`}
+        src={`/old-mst/cont_omst.html?PROLIFIC_PID=${prolificPID}&STUDY_ID=${studyID}&SESSION_ID=${sessionID}&AWS_API=${encodeURIComponent(process.env.NEXT_PUBLIC_AWS_METRICS_API || '')}&GAME_SET=${gameSet || 1}&GAME_WEEK=${gameWeek || 1}${extraParams}`}
         title="oMST Task"
         style={{ width: '100%', height: '100%', border: 'none' }}
       />

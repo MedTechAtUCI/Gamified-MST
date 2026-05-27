@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Mneumonic Similarity Task (MST)",
+  title: "The Mnemonic Similarity Task (MST)",
   description: "A cognitive task to assess memory performance using Next.js and jsPsych.",
 };
 

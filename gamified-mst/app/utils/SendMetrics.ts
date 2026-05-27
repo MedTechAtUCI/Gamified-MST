@@ -6,6 +6,9 @@ type ProlificData = {
     sessionID: string;
     participantAge?: number;
     participantGender?: string;
+    participantEthnicity?: string;
+    participantRace?: string;
+    participantHandedness?: string;
     screenSize?: string;
     deviceType?: string;
 };
@@ -71,6 +74,10 @@ export const sendMetrics = async (
         game_type: gameType,
         ...(typeof prolific.participantAge !== 'undefined' ? { participant_age: prolific.participantAge } : {}),
         ...(prolific.participantGender ? { participant_gender: prolific.participantGender } : {}),
+        ...(prolific.participantEthnicity ? { participant_ethnicity: prolific.participantEthnicity } : {}),
+        ...(prolific.participantRace ? { participant_race: prolific.participantRace } : {}),
+        ...(prolific.participantHandedness ? { participant_handedness: prolific.participantHandedness } : {}),
+        
         ...(prolific.screenSize ? { screen_size: prolific.screenSize } : {}),
         ...(prolific.deviceType ? { device_type: prolific.deviceType } : {}),
     };

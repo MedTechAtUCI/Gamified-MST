@@ -5,6 +5,7 @@ import peterAnteater from '../../images/anteater/peter_anteater.png';
 import img1 from '../../images/walkthrough/pcon001b.jpg';
 import img2 from '../../images/walkthrough/pcon022a.jpg';
 import img3 from '../../images/walkthrough/pcon022b.jpg';
+
 import './Walkthrough.css';
 
 type Step = {

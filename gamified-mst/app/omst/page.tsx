@@ -15,7 +15,7 @@ function OMSTContent() {
   
   const [loading, setLoading] = useState(true);
   const [urlParams, setUrlParams] = useState({ pid: '', sid: '', study: '' });
-  const [demographics, setDemographics] = useState({ age: 0, gender: '' });
+  const [demographics, setDemographics] = useState({ age: 0, gender: '', ethnicity: '', race: '', handedness: '' });
   const [gameSet, setGameSet] = useState<number>(1);
   const [gameWeek, setGameWeek] = useState<number>(1);
 
@@ -27,16 +27,16 @@ function OMSTContent() {
         return;
       }
 
-      const pid = searchParams.get('PROLIFIC_PID') || 'guest_user';
-      const sid = searchParams.get('SESSION_ID') || 'test_session';
-      const study = searchParams.get('STUDY_ID') || 'test_study';
+      const pid = searchParams.get('PROLIFIC_PID') || '';
+      const sid = searchParams.get('SESSION_ID') || '';
+      const study = searchParams.get('STUDY_ID') || '';
       
       setUrlParams({ pid, sid, study });
 
       const savedDemos = window.sessionStorage.getItem('mst_test_demographics');
       if (savedDemos) {
         const parsed = JSON.parse(savedDemos);
-        setDemographics({ age: parsed.participantAge, gender: parsed.participantGender });
+        setDemographics({ age: parsed.participantAge, gender: parsed.participantGender, ethnicity: parsed.participantEthnicity, race: parsed.participantRace, handedness: parsed.participantHandedness });
       }
 
       try {
@@ -77,6 +77,9 @@ function OMSTContent() {
       sessionID={urlParams.sid}
       participantAge={demographics.age}
       participantGender={demographics.gender}
+      participantEthnicity={demographics.ethnicity}
+      participantRace={demographics.race}
+      participantHandedness={demographics.handedness}
       gameSet={gameSet}
       gameWeek={gameWeek}
     />

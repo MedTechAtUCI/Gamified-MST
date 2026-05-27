@@ -54,6 +54,9 @@ def lambda_handler(event, context):
         session_completed = payload.get("session_completed", False)
         game_type = payload.get("game_type", "G")  # Default to 'G' (gamified)
 
+        # Append the game type suffix to make the session key distinct
+        if session_id and f"#{game_type}" not in str(session_id):
+            session_id = f"{session_id}#{game_type}"
 
         # Calculate week_of_study on backend based on completed sessions count
         # Week = (number of completed sessions) + 1
@@ -72,6 +75,10 @@ def lambda_handler(event, context):
 
         participant_age = payload.get("participant_age")
         participant_gender = payload.get("participant_gender")
+        participant_ethnicity = payload.get("participant_ethnicity")
+        participant_race = payload.get("participant_race")
+        participant_handedness = payload.get("participant_handedness")
+
         screen_size = payload.get("screen_size")
         device_type = payload.get("device_type")
         
@@ -116,6 +123,18 @@ def lambda_handler(event, context):
             if participant_gender:
                 update_parts.append("participant_gender = :gender")
                 expr_values[":gender"] = participant_gender
+
+            if participant_ethnicity:
+                update_parts.append("participant_ethnicity = :ethnicity")
+                expr_values[":ethnicity"] = participant_ethnicity
+
+            if participant_race:
+                update_parts.append("participant_race = :race")
+                expr_values[":race"] = participant_race
+                
+            if participant_handedness:
+                update_parts.append("participant_handedness = :hand")
+                expr_values[":hand"] = participant_handedness
 
             if screen_size:
                 update_parts.append("screen_size = :screen")
@@ -221,9 +240,14 @@ def lambda_handler(event, context):
                         "correct": trial.get("correct"),
                         "reaction_time_ms": reaction_time_ms,
                         "timestamp": trial.get("timestamp"),
+                        "game_type": game_type,
                         "participant_age": participant_age,
                         "participant_gender": participant_gender,
-                        "game_type": game_type,
+                        "participant_ethnicity": participant_ethnicity,
+                        "participant_race": participant_race,
+                        "participant_handedness": participant_handedness,
+                        "device_type": device_type,
+                        "screen_size": screen_size
                     }
 
                     batch.put_item(Item=item)

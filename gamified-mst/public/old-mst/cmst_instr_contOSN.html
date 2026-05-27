@@ -58,9 +58,12 @@ Revised: November 20, 2019 (CELS) for Cordova
 </head>
 <script>
 
+const urlParams = new URLSearchParams(window.location.search);
+const verifiedPID = urlParams.get('PROLIFIC_PID');
+
 // Global variable mocks to replace JATOS runtime dependencies smoothly
 window.jatos = {
-  urlQueryParameters: { sid: new URLSearchParams(window.location.search).get('PROLIFIC_PID') || 'guest_user' },
+  urlQueryParameters: { sid: verifiedPID },
   studySessionData: { resp_mode: 'button', set: '1', trialorder: '1', subset: '1', twochoice: 0, selfpaced: 1 },
   componentJsonInput: null,
   batchSession: { defined: function() { return true; }, add: function(path, data) { console.log("Saved summary:", data); } }
@@ -78,7 +81,7 @@ function getID() {
   // Try to get a reasonable ID code for this person.  You can use the URL with a "sid" parameter or
   // specify one in the jatos studySessionData. If not, it'll use the JATOS workerId.
   // URL > studySession > workerID
-  var sid=jatos.urlQueryParameters.sid;
+  var sid = new URLSearchParams(window.location.search).get('PROLIFIC_PID');
   if (sid == undefined) {
     sid=jatos.studySessionData['sid'];
   }
@@ -140,9 +143,22 @@ function getID() {
   let prompts=json_prompts['instructions']; // Load in this phase's section
 
   var jsPsych = initJsPsych({on_finish: function() {
-      // Redirect back to cont_omst.html after instructions complete
-      // instructionsCompleted flag is already in the URL params from the redirect
-      window.location.href = './cont_omst.html?' + window.location.search;
+    let outgoingSearch = window.location.search || '';
+    
+    // If it already starts with a question mark, strip it so we can normalize it safely
+    while (outgoingSearch.startsWith('?')) {
+      outgoingSearch = outgoingSearch.substring(1);
+    }
+    
+    // Append the instructions complete flag securely if it isn't already there
+    if (!outgoingSearch.includes('instructionsCompleted=true')) {
+      outgoingSearch += (outgoingSearch ? '&' : '') + 'instructionsCompleted=true';
+    }
+    
+    // Combine using exactly ONE question mark
+    const redirectUrl = './cont_omst.html?' + outgoingSearch;
+
+    window.location.href = redirectUrl;
   }});
   
   jsPsych.data.addProperties({

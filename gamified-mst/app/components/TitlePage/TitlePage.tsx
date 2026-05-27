@@ -2,13 +2,14 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import './TitlePage.css';
 
 import PeterDialogue from './PetrDiag';
 import mainBg from '../../images/start_screen/backgrounds/start_screen_bg.png';
 import mainTitle from '../../images/start_screen/text/main_title.png';
 import peterAnteater from '../../images/anteater/peter_anteater.png';
 import startBtn from '../../images/start_screen/buttons/start_button.png';
+
+import './TitlePage.css';
 
 export default function TitlePage({ route = 'gamified-mst' }: { route?: string }) {
   const router = useRouter();
@@ -20,13 +21,23 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
   const [studyID, setStudyID] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [ethnicity, setEthnicity] = useState('');
+  const [race, setRace] = useState('');
+  const [handedness, setHandedness] = useState('');
   const [anteaterClicked, setAnteaterClicked] = useState(false);
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [showDemographicsForm, setShowDemographicsForm] = useState(false);
   
   const parsedAge = Number(age);
   const isAgeValid = Number.isFinite(parsedAge) && parsedAge >= 18;
-  const canStart = anteaterClicked && isAgeValid && gender.trim() !== '';
+
+  const isDemographicsComplete = 
+    isAgeValid &&
+    gender.trim() !== '' && 
+    ethnicity.trim() !== '' && 
+    race.trim() !== '' && 
+    handedness.trim() !== '';
+  const canStart = anteaterClicked && isDemographicsComplete;
 
   // Load user data if prolific ID is available (gamified only)
   useEffect(() => {
@@ -68,9 +79,14 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       const response = await fetch(url.toString());
       if (response.ok) {
         const data = await response.json();
-        if (data.participant_age && data.participant_gender) {
+        if (data.participant_age && data.participant_gender && data.participant_ethnicity && data.participant_race && data.participant_handedness) {
           setAge(String(data.participant_age));
           setGender(data.participant_gender);
+
+          if (data.participant_ethnicity) setEthnicity(data.participant_ethnicity);
+          if (data.participant_race) setRace(data.participant_race);
+          if (data.participant_handedness) setHandedness(data.participant_handedness);
+
           setShowDemographicsForm(false);
         } else {
           setShowDemographicsForm(true);
@@ -108,7 +124,13 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
     if (route === 'gamified-mst') {
       window.sessionStorage.setItem(
         'mst_test_demographics',
-        JSON.stringify({ participantAge: parsedAge, participantGender: gender })
+        JSON.stringify({ 
+          participantAge: parsedAge, 
+          participantGender: gender,
+          participantEthnicity: ethnicity,
+          participantRace: race,
+          participantHandedness: handedness
+        })
       );
     }
 
@@ -181,10 +203,43 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
                   </select>
                 </div>
 
+                <div className="testModeFormGroup">
+                  <label>Ethnicity</label>
+                  <select value={ethnicity} onChange={(e) => setEthnicity(e.target.value)}>
+                    <option value="">Select one</option>
+                    <option value="hispanic">Hispanic or Latino</option>
+                    <option value="non-hispanic">Not Hispanic or Latino</option>
+                  </select>
+                </div>
+
+                <div className="testModeFormGroup">
+                  <label>Race</label>
+                  <select value={race} onChange={(e) => setRace(e.target.value)}>
+                    <option value="">Select one</option>
+                    <option value="white">White</option>
+                    <option value="black">Black or African American</option>
+                    <option value="asian">Asian</option>
+                    <option value="native">American Indian or Alaska Native</option>
+                    <option value="islander">Native Hawaiian or Other Pacific Islander</option>
+                    <option value="mixed">More than one race</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div className="testModeFormGroup">
+                  <label>Handedness</label>
+                  <select value={handedness} onChange={(e) => setHandedness(e.target.value)}>
+                    <option value="">Select one</option>
+                    <option value="right">Right-handed</option>
+                    <option value="left">Left-handed</option>
+                    <option value="ambidextrous">Ambidextrous</option>
+                  </select>
+                </div>
+
                 <button 
                   className="testModeSubmitBtn" 
                   onClick={() => setShowDemographicsForm(false)}
-                  disabled={!isAgeValid || gender.trim() === ''}
+                  disabled={!isDemographicsComplete}
                 >
                   Continue
                 </button>

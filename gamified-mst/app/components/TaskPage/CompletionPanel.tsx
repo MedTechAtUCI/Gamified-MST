@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import peterAnteater from '../../images/anteater/peter_anteater.png';
+
 import './CompletionPanel.css';
 
 interface CompletionPanelProps {
