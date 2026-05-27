@@ -64,7 +64,7 @@ function getID() {
 
 // Global variable mocks to replace JATOS runtime dependencies smoothly
 window.jatos = {
-  urlQueryParameters: { sid: new URLSearchParams(window.location.search).get('PROLIFIC_PID') || 'guest_user' },
+  urlQueryParameters: { sid: new URLSearchParams(window.location.search).get('PROLIFIC_PID') },
   studySessionData: { resp_mode: 'button', set: '1', trialorder: '1', subset: '1', twochoice: 0, selfpaced: 1 },
   componentJsonInput: null,
   batchSession: { defined: function() { return true; }, add: function(path, data) { console.log("Saved summary:", data); } }
@@ -79,10 +79,15 @@ window.jatos = {
   var twochoice = 0;
   var selfpaced = 1;
 
-  const urlParams = new URLSearchParams(window.location.search);
+  let cleanSearch = window.location.search || '';
+  while (cleanSearch.startsWith('?')) {
+    cleanSearch = cleanSearch.substring(1);
+  }
+
+  const urlParams = new URLSearchParams(cleanSearch);
   const awsMetricsAPI = urlParams.get('AWS_API');
-  const prolificPID = urlParams.get('PROLIFIC_PID') || sid;
-  const sessionID = urlParams.get('SESSION_ID') || 'default_session';
+  const prolificPID = urlParams.get('PROLIFIC_PID');
+  const sessionID = urlParams.get('SESSION_ID');
   const urlFallbackSet = parseInt(urlParams.get('GAME_SET') || '1', 10);
   
   // Demographics from URL parameters (passed by OMSTTaskPage)
@@ -120,12 +125,17 @@ window.jatos = {
     console.log(`Fresh session; assigned gameSet=${gameSet}`);
   }
   
-  // ==================== REDIRECT TO INSTRUCTIONS IF FRESH SESSION ====================
-  // If startTrial === 0 (fresh session) and instructionsCompleted flag not set, load instructions first
+  // ==================== REDIRECT TO INSTRUCTIONS ====================
   const instructionsCompleted = urlParams.get('instructionsCompleted') === 'true';
-  if (startTrial === 0 && !instructionsCompleted) {
+  if (!instructionsCompleted) {
     console.log('Fresh session detected - redirecting to comprehensive instructions');
-    const instructionUrl = './cmst_instr_contOSN.html?' + window.location.search + '&instructionsCompleted=true';
+    
+    let searchString = window.location.search || '';
+    while (searchString.startsWith('?')) {
+      searchString = searchString.substring(1);
+    }
+
+    const instructionUrl = './cmst_instr_contOSN.html?' + searchString + '&instructionsCompleted=true';
     window.location.href = instructionUrl;
     // Don't continue past this point
     return;

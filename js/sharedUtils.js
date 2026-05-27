@@ -95,12 +95,6 @@ function isSessionCompleted(userState, sessionId) {
   return sessionRecord?.completed || false;
 }
 
-/**
- * Save trial progress to AWS
- * @param {string} awsMetricsAPI - API endpoint base URL
- * @param {Object} payload - Progress data to save
- * @returns {Promise<boolean>} True if save successful
- */
 async function saveProgress(awsMetricsAPI, payload) {
   try {
     const response = await fetch(`${awsMetricsAPI}/metrics`, {
