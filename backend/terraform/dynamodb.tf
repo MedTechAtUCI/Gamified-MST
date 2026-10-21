@@ -1,3 +1,10 @@
+# Non-key attributes are schemaless. metrics_writer stores these demographics
+# on both tables when the client sends them:
+#   participant_age (N), participant_years_of_education (N),
+#   participant_colorblindness (BOOL, or S for a free-text answer),
+#   participant_gender, participant_ethnicity, participant_race,
+#   participant_handedness, screen_size, device_type.
+
 resource "aws_dynamodb_table" "metrics_table" {
   name         = "metrics-table"
   billing_mode = "PAY_PER_REQUEST"

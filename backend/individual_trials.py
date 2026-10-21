@@ -122,6 +122,8 @@ def visualize_all_user_trials(table_name="metrics-table"):
                         'reaction_time_ms': item.get('reaction_time_ms'),
                         'timestamp': item.get('timestamp', ''),
                         'participant_age': item.get('participant_age'),
+                        'participant_years_of_education': item.get('participant_years_of_education'),
+                        'participant_colorblindness': item.get('participant_colorblindness'),
                         'participant_gender': item.get('participant_gender'),
                         'verdict': get_verdict(m_type, resp),
                         'rec': metrics.get('rec') if metrics else None,

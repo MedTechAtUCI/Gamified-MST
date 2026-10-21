@@ -8,6 +8,53 @@ table = dynamodb.Table(os.environ.get("DYNAMO_TABLE", "metrics-table"))
 state_table = dynamodb.Table(os.environ.get("USER_STATE_TABLE", "user-state-table"))
 
 
+def payload_value(payload, *keys):
+    """Return the first provided value, skipping missing values and blank strings."""
+    for key in keys:
+        if key not in payload:
+            continue
+        value = payload.get(key)
+        if value is None:
+            continue
+        if isinstance(value, str) and value.strip() == "":
+            continue
+        return value
+    return None
+
+
+def coerce_int(value, field_name):
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} must be an integer")
+    try:
+        if isinstance(value, float) and not value.is_integer():
+            raise ValueError
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} must be an integer")
+
+
+def normalize_colorblindness(value):
+    """Store yes/no answers as booleans and keep descriptive answers as strings."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and int(value) in (0, 1) and float(value) in (0.0, 1.0):
+        return bool(int(value))
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "yes", "y", "1"}:
+            return True
+        if normalized in {"false", "no", "n", "0"}:
+            return False
+        if normalized:
+            return value.strip()
+        return None
+    raise ValueError("participant_colorblindness must be a boolean or string")
+
+
 def count_completed_sessions(user_id):
     """
     Count total completed sessions for a user across all session records.
@@ -73,18 +120,40 @@ def lambda_handler(event, context):
         if week_of_study is not None:
             week_of_study = int(week_of_study)
 
-        participant_age = payload.get("participant_age")
+        participant_age = payload_value(payload, "participant_age", "age")
         participant_gender = payload.get("participant_gender")
         participant_ethnicity = payload.get("participant_ethnicity")
         participant_race = payload.get("participant_race")
         participant_handedness = payload.get("participant_handedness")
+        participant_years_of_education = payload_value(
+            payload,
+            "participant_years_of_education",
+            "years_of_education",
+            "yearsOfEducation",
+        )
+        participant_colorblindness = payload_value(
+            payload,
+            "participant_colorblindness",
+            "colorblindness",
+            "colorblind",
+            "is_colorblind",
+        )
 
         screen_size = payload.get("screen_size")
         device_type = payload.get("device_type")
-        
-        # Ensure participant_age is an integer
-        if participant_age is not None:
-            participant_age = int(participant_age)
+
+        try:
+            participant_age = coerce_int(participant_age, "participant_age")
+            participant_years_of_education = coerce_int(
+                participant_years_of_education, "participant_years_of_education"
+            )
+            participant_colorblindness = normalize_colorblindness(participant_colorblindness)
+        except ValueError as err:
+            return {
+                "statusCode": 400,
+                "headers": headers,
+                "body": json.dumps({"error": str(err)})
+            }
         
         # Validate age >= 18 (server-side enforcement)
         if participant_age is not None and participant_age < 18:
@@ -92,6 +161,13 @@ def lambda_handler(event, context):
                 "statusCode": 400,
                 "headers": headers,
                 "body": json.dumps({"error": "Participant must be 18 years or older"})
+            }
+
+        if participant_years_of_education is not None and participant_years_of_education < 0:
+            return {
+                "statusCode": 400,
+                "headers": headers,
+                "body": json.dumps({"error": "participant_years_of_education must be 0 or greater"})
             }
 
         if user_id and session_id:
@@ -135,6 +211,15 @@ def lambda_handler(event, context):
             if participant_handedness:
                 update_parts.append("participant_handedness = :hand")
                 expr_values[":hand"] = participant_handedness
+
+            if participant_years_of_education is not None:
+                update_parts.append("participant_years_of_education = :education")
+                expr_values[":education"] = participant_years_of_education
+
+            # False is a real answer, so only skip a missing value.
+            if participant_colorblindness is not None:
+                update_parts.append("participant_colorblindness = :colorblind")
+                expr_values[":colorblind"] = participant_colorblindness
 
             if screen_size:
                 update_parts.append("screen_size = :screen")
@@ -249,6 +334,10 @@ def lambda_handler(event, context):
                         "device_type": device_type,
                         "screen_size": screen_size
                     }
+                    if participant_years_of_education is not None:
+                        item["participant_years_of_education"] = participant_years_of_education
+                    if participant_colorblindness is not None:
+                        item["participant_colorblindness"] = participant_colorblindness
 
                     batch.put_item(Item=item)
 

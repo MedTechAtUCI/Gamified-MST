@@ -13,6 +13,39 @@ paths:
           default:
             statusCode: "200"
     post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                participant_age:
+                  type: integer
+                  minimum: 18
+                  description: "Participant age. `age` is accepted as an alias."
+                age:
+                  type: integer
+                  minimum: 18
+                  description: "Alias for participant_age."
+                participant_years_of_education:
+                  type: integer
+                  minimum: 0
+                  description: "Years of education. `years_of_education` is accepted as an alias."
+                years_of_education:
+                  type: integer
+                  minimum: 0
+                  description: "Alias for participant_years_of_education."
+                participant_colorblindness:
+                  description: "Colorblindness. Boolean yes/no, or a short description. `colorblindness` is accepted as an alias."
+                  oneOf:
+                    - type: boolean
+                    - type: string
+                colorblindness:
+                  description: "Alias for participant_colorblindness."
+                  oneOf:
+                    - type: boolean
+                    - type: string
       responses:
         default:
           description: "Default response for POST /metrics"
