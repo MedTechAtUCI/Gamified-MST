@@ -15,7 +15,7 @@ function GamifiedMSTContent() {
   
   const [loading, setLoading] = useState(true);
   const [urlParams, setUrlParams] = useState({ pid: '', sid: '', study: '' });
-  const [demographics, setDemographics] = useState({ age: 18, gender: '', ethnicity: '', race: '', handedness: '' });
+  const [demographics, setDemographics] = useState({ age: 18, gender: '', ethnicity: '', race: '', handedness: '', education: 0, colorblindness: '' });
   const [gameSet, setGameSet] = useState<number>(1);
   const [gameWeek, setGameWeek] = useState<number>(1);
 
@@ -36,7 +36,15 @@ function GamifiedMSTContent() {
       const savedDemos = window.sessionStorage.getItem('mst_test_demographics');
       if (savedDemos) {
         const parsed = JSON.parse(savedDemos);
-        setDemographics({ age: parsed.participantAge, gender: parsed.participantGender, ethnicity: parsed.participantEthnicity, race: parsed.participantRace, handedness: parsed.participantHandedness });
+        setDemographics({
+          age: parsed.participantAge,
+          gender: parsed.participantGender,
+          ethnicity: parsed.participantEthnicity,
+          race: parsed.participantRace,
+          handedness: parsed.participantHandedness,
+          education: parsed.participantEducation,
+          colorblindness: parsed.participantColorblindness
+        });
       }
 
       try {
@@ -81,6 +89,8 @@ function GamifiedMSTContent() {
       participantEthnicity={demographics.ethnicity}
       participantRace={demographics.race}
       participantHandedness={demographics.handedness}
+      participantEducation={demographics.education}
+      participantColorblindness={demographics.colorblindness}
       gameSet={gameSet}
       gameWeek={gameWeek}
     />

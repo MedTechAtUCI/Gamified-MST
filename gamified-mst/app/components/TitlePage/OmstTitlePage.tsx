@@ -17,9 +17,13 @@ export default function OmstTitlePage({ route = 'omst' }: { route?: string }) {
   const [ethnicity, setEthnicity] = useState('');
   const [race, setRace] = useState('');
   const [handedness, setHandedness] = useState('');
+  const [education, setEducation] = useState('');
+  const [colorblindness, setColorblindness] = useState('');
 
   const isAgeValid = Number(age) >= 18;
-  const canContinue = isAgeValid && gender && ethnicity && race && handedness;
+  const parsedEducation = Number(education);
+  const isEducationValid = education.trim() !== '' && Number.isFinite(parsedEducation) && parsedEducation >= 0;
+  const canContinue = isAgeValid && gender && ethnicity && race && handedness && isEducationValid && colorblindness;
 
   useEffect(() => {
     setProlificPID(searchParams.get('PROLIFIC_PID') || '');
@@ -43,7 +47,9 @@ export default function OmstTitlePage({ route = 'omst' }: { route?: string }) {
         participantGender: gender,
         participantEthnicity: ethnicity,
         participantRace: race,
-        participantHandedness: handedness
+        participantHandedness: handedness,
+        participantEducation: parsedEducation,
+        participantColorblindness: colorblindness
       })
     );
 
@@ -59,11 +65,11 @@ export default function OmstTitlePage({ route = 'omst' }: { route?: string }) {
   // Allow Enter key to continue when all required fields are filled
   const onEnterPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Enter') {
-      if (isAgeValid && gender && ethnicity && race && handedness) {
+      if (isAgeValid && gender && ethnicity && race && handedness && isEducationValid && colorblindness) {
         handleContinue();
       }
     }
-  }, [isAgeValid, gender, ethnicity, race, handedness, handleContinue]);
+  }, [isAgeValid, gender, ethnicity, race, handedness, isEducationValid, colorblindness, handleContinue]);
 
   useEffect(() => {
     window.addEventListener('keydown', onEnterPress);
@@ -138,6 +144,27 @@ export default function OmstTitlePage({ route = 'omst' }: { route?: string }) {
           <input type="radio" name="hand" value="ambi" onChange={(e) => setHandedness(e.target.value)} /> <span style={radioLabelStyle}>Ambidextrous</span>
         </div>
 
+        {/* EDUCATION */}
+        <div style={{ marginBottom: '18px' }}>
+          <label style={labelStyle}>Years of education:</label>
+          <input
+            type="number"
+            min={0}
+            value={education}
+            onChange={(e) => setEducation(e.target.value)}
+            placeholder="Enter years of education (e.g. 12, 16)"
+            style={{ width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '16px' }}
+          />
+        </div>
+
+        {/* COLORBLINDNESS */}
+        <div style={radioContainerStyle}>
+          <label style={labelStyle}>Colorblindness:</label>
+          <input type="radio" name="colorblindness" value="no" onChange={(e) => setColorblindness(e.target.value)} /> <span style={radioLabelStyle}>No</span><br/>
+          <input type="radio" name="colorblindness" value="yes" onChange={(e) => setColorblindness(e.target.value)} /> <span style={radioLabelStyle}>Yes</span><br/>
+          <input type="radio" name="colorblindness" value="unsure" onChange={(e) => setColorblindness(e.target.value)} /> <span style={radioLabelStyle}>Unsure</span>
+        </div>
+
 
         {/* Fixed footer button to ensure visibility on small screens */}
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderTop: '1px solid #eee', padding: '12px 16px', display: 'flex', justifyContent: 'center', zIndex: 9999 }}>
@@ -147,7 +174,9 @@ export default function OmstTitlePage({ route = 'omst' }: { route?: string }) {
               {gender ? '' : 'Gender required • '}
               {ethnicity ? '' : 'Ethnicity required • '}
               {race ? '' : 'Race required • '}
-              {handedness ? '' : 'Handedness required'}
+              {handedness ? '' : 'Handedness required • '}
+              {isEducationValid ? '' : 'Education required • '}
+              {colorblindness ? '' : 'Colorblindness required'}
             </div>
             <button
               onClick={handleContinue}

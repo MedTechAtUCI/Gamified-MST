@@ -30,11 +30,13 @@ type TaskPageProps = {
   participantEthnicity?: string;
   participantRace?: string;
   participantHandedness?: string;
+  participantEducation?: number;
+  participantColorblindness?: string;
   gameSet?: number;
   gameWeek?: number;
 };
 
-const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, gameSet: propGameSet, gameWeek: propGameWeek }: TaskPageProps) => {
+const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, participantEducation, participantColorblindness, gameSet: propGameSet, gameWeek: propGameWeek }: TaskPageProps) => {
   // Age validation check - must be 18 or older
   useEffect(() => {
     if (typeof participantAge !== 'undefined' && participantAge < 18) {
@@ -393,6 +395,8 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
         ...(participantEthnicity ? { participant_ethnicity: participantEthnicity } : {}),
         ...(participantRace ? { participant_race: participantRace } : {}),
         ...(participantHandedness ? { participant_handedness: participantHandedness } : {}),
+        ...(typeof participantEducation !== 'undefined' ? { participant_education: participantEducation } : {}),
+        ...(participantColorblindness ? { participant_colorblindness: participantColorblindness } : {}),
         ...(screenSize ? { screen_size: screenSize } : {}),
         ...(deviceType ? { device_type: deviceType } : {}),
       };
@@ -429,6 +433,8 @@ const TaskPage = ({ taskType, prolificPID, studyID, sessionID, participantAge, p
           participantEthnicity,
           participantRace,
           participantHandedness,
+          participantEducation,
+          participantColorblindness,
           screenSize,
           deviceType,
         },

@@ -11,6 +11,11 @@ export type UserState = {
   sessionId: string;
   participant_age?: number;
   participant_gender?: string;
+  participant_ethnicity?: string;
+  participant_race?: string;
+  participant_handedness?: string;
+  participant_education?: number;
+  participant_colorblindness?: string;
   sessions?: SessionRecord[];
   current_level?: number;
   week_of_study?: number;

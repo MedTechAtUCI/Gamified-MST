@@ -78,9 +78,18 @@ def lambda_handler(event, context):
         participant_ethnicity = payload.get("participant_ethnicity")
         participant_race = payload.get("participant_race")
         participant_handedness = payload.get("participant_handedness")
+        participant_education = payload.get("participant_education")
+        participant_colorblindness = payload.get("participant_colorblindness")
 
         screen_size = payload.get("screen_size")
         device_type = payload.get("device_type")
+        
+        # Ensure numeric fields are properly typed
+        if participant_education is not None:
+            try:
+                participant_education = int(participant_education)
+            except (ValueError, TypeError):
+                participant_education = None
         
         # Ensure participant_age is an integer
         if participant_age is not None:
@@ -135,6 +144,14 @@ def lambda_handler(event, context):
             if participant_handedness:
                 update_parts.append("participant_handedness = :hand")
                 expr_values[":hand"] = participant_handedness
+
+            if participant_education is not None:
+                update_parts.append("participant_education = :education")
+                expr_values[":education"] = participant_education
+
+            if participant_colorblindness:
+                update_parts.append("participant_colorblindness = :colorblindness")
+                expr_values[":colorblindness"] = participant_colorblindness
 
             if screen_size:
                 update_parts.append("screen_size = :screen")
@@ -246,6 +263,8 @@ def lambda_handler(event, context):
                         "participant_ethnicity": participant_ethnicity,
                         "participant_race": participant_race,
                         "participant_handedness": participant_handedness,
+                        "participant_education": participant_education,
+                        "participant_colorblindness": participant_colorblindness,
                         "device_type": device_type,
                         "screen_size": screen_size
                     }
