@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import PeterDialogue from './PetrDiag';
 import mainBg from '../../images/start_screen/backgrounds/start_screen_bg.png';
@@ -29,20 +29,26 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
   const [anteaterClicked, setAnteaterClicked] = useState(false);
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [showDemographicsForm, setShowDemographicsForm] = useState(false);
+  const [demographicsPage, setDemographicsPage] = useState<1 | 2>(1);
+  const demographicsModalRef = useRef<HTMLDivElement>(null);
   
   const parsedAge = Number(age);
   const isAgeValid = Number.isFinite(parsedAge) && parsedAge >= 18;
   const parsedEducation = Number(education);
   const isEducationValid = education.trim() !== '' && Number.isFinite(parsedEducation) && parsedEducation >= 0;
 
-  const isDemographicsComplete = 
+  const isFirstPageComplete =
     isAgeValid &&
-    gender.trim() !== '' && 
-    ethnicity.trim() !== '' && 
-    race.trim() !== '' && 
+    gender.trim() !== '' &&
+    ethnicity.trim() !== '' &&
+    race.trim() !== '';
+
+  const isSecondPageComplete =
     handedness.trim() !== '' &&
     isEducationValid &&
     colorblindness.trim() !== '';
+
+  const isDemographicsComplete = isFirstPageComplete && isSecondPageComplete;
   const canStart = anteaterClicked && isDemographicsComplete;
 
   // Load user data if prolific ID is available (gamified only)
@@ -165,6 +171,20 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
     setAnteaterClicked(true);
   };
 
+  const handleDemographicsContinue = () => {
+    if (demographicsPage === 1) {
+      if (!isFirstPageComplete) return;
+      setDemographicsPage(2);
+      return;
+    }
+    if (!isSecondPageComplete) return;
+    setShowDemographicsForm(false);
+  };
+
+  useEffect(() => {
+    demographicsModalRef.current?.scrollTo({ top: 0 });
+  }, [demographicsPage]);
+
   return (
     <div className="scene">
       <img src={mainBg.src} className="bgImage" alt="" />
@@ -194,10 +214,10 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       {/* Gamified demographics form */}
       {route === 'gamified-mst' && showDemographicsForm && (
         <div className="testModeOverlay">
-          <div className="testModeModal">
+          <div className="testModeModal" ref={demographicsModalRef}>
             <h2>{loadingUserData ? 'Loading your profile...' : 'Please provide your information'}</h2>
             
-            {!loadingUserData && (
+            {!loadingUserData && demographicsPage === 1 && (
               <>
                 <div className="testModeFormGroup">
                   <label>Age</label>
@@ -244,6 +264,18 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
                   </select>
                 </div>
 
+                <button
+                  className="testModeSubmitBtn"
+                  onClick={handleDemographicsContinue}
+                  disabled={!isFirstPageComplete}
+                >
+                  Continue
+                </button>
+              </>
+            )}
+
+            {!loadingUserData && demographicsPage === 2 && (
+              <>
                 <div className="testModeFormGroup">
                   <label>Handedness</label>
                   <select value={handedness} onChange={(e) => setHandedness(e.target.value)}>
@@ -276,10 +308,17 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
                   </select>
                 </div>
 
-                <button 
-                  className="testModeSubmitBtn" 
-                  onClick={() => setShowDemographicsForm(false)}
-                  disabled={!isDemographicsComplete}
+                <button
+                  type="button"
+                  className="testModeBackBtn"
+                  onClick={() => setDemographicsPage(1)}
+                >
+                  Back
+                </button>
+                <button
+                  className="testModeSubmitBtn"
+                  onClick={handleDemographicsContinue}
+                  disabled={!isSecondPageComplete}
                 >
                   Continue
                 </button>
