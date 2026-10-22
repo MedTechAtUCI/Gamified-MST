@@ -9,6 +9,8 @@ type ProlificData = {
     participantEthnicity?: string;
     participantRace?: string;
     participantHandedness?: string;
+    participantEducation?: number;
+    participantColorblindness?: string;
     screenSize?: string;
     deviceType?: string;
 };
@@ -77,6 +79,8 @@ export const sendMetrics = async (
         ...(prolific.participantEthnicity ? { participant_ethnicity: prolific.participantEthnicity } : {}),
         ...(prolific.participantRace ? { participant_race: prolific.participantRace } : {}),
         ...(prolific.participantHandedness ? { participant_handedness: prolific.participantHandedness } : {}),
+        ...(typeof prolific.participantEducation !== 'undefined' ? { participant_education: prolific.participantEducation } : {}),
+        ...(prolific.participantColorblindness ? { participant_colorblindness: prolific.participantColorblindness } : {}),
         
         ...(prolific.screenSize ? { screen_size: prolific.screenSize } : {}),
         ...(prolific.deviceType ? { device_type: prolific.deviceType } : {}),

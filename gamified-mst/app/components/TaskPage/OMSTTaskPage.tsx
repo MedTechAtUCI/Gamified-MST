@@ -12,6 +12,8 @@ type OMSTaskPageProps = {
   participantEthnicity?: string;
   participantRace?: string;
   participantHandedness?: string;
+  participantEducation?: number;
+  participantColorblindness?: string;
   gameSet?: number;
   gameWeek?: number;
 };
@@ -25,6 +27,8 @@ export default function OMSTaskPage({
   participantEthnicity,
   participantRace,
   participantHandedness,
+  participantEducation,
+  participantColorblindness,
   gameSet, 
   gameWeek 
 }: OMSTaskPageProps) {
@@ -45,16 +49,20 @@ export default function OMSTaskPage({
         // Dynamic fallbacks strictly computed here
         const finalAge = participantAge || parsed.participantAge;
         const finalGender = participantGender || parsed.participantGender;
+        const finalEducation = participantEducation !== undefined ? participantEducation : parsed.participantEducation;
+        const finalColorblindness = participantColorblindness || parsed.participantColorblindness;
         
         if (finalAge) queryStr += `&PARTICIPANT_AGE=${encodeURIComponent(finalAge)}`;
         if (finalGender) queryStr += `&PARTICIPANT_GENDER=${encodeURIComponent(finalGender)}`;
+        if (finalEducation !== undefined && finalEducation !== null && !isNaN(finalEducation)) queryStr += `&PARTICIPANT_EDUCATION=${encodeURIComponent(finalEducation)}`;
+        if (finalColorblindness) queryStr += `&PARTICIPANT_COLORBLINDNESS=${encodeURIComponent(finalColorblindness)}`;
         
         setExtraParams(queryStr);
       }
     } catch (e) {
       console.warn("Failed to parse demographics from session storage", e);
     }
-  }, [participantAge, participantGender, participantEthnicity, participantRace, participantHandedness]); // Stripped back dependencies to prevent infinite loops
+  }, [participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, participantEducation, participantColorblindness]); // Stripped back dependencies to prevent infinite loops
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
@@ -94,6 +102,8 @@ export default function OMSTaskPage({
               participantEthnicity: stored.participantEthnicity,
               participantRace: stored.participantRace,
               participantHandedness: stored.participantHandedness,
+              participantEducation: participantEducation !== undefined ? participantEducation : stored.participantEducation,
+              participantColorblindness: participantColorblindness || stored.participantColorblindness,
               screenSize: `${window.innerWidth}x${window.innerHeight}`,
               deviceType: window.innerWidth < 768 ? 'mobile' : 'desktop',
             },
@@ -115,7 +125,7 @@ export default function OMSTaskPage({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, gameSet, gameWeek]);
+  }, [prolificPID, studyID, sessionID, participantAge, participantGender, participantEthnicity, participantRace, participantHandedness, participantEducation, participantColorblindness, gameSet, gameWeek]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#fff' }}>
