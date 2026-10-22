@@ -93,6 +93,8 @@ window.jatos = {
   // Demographics from URL parameters (passed by OMSTTaskPage)
   const participantAge = urlParams.get('PARTICIPANT_AGE') ? parseInt(urlParams.get('PARTICIPANT_AGE')) : undefined;
   const participantGender = urlParams.get('PARTICIPANT_GENDER') || undefined;
+  const participantEducation = urlParams.get('PARTICIPANT_EDUCATION') ? parseInt(urlParams.get('PARTICIPANT_EDUCATION')) : undefined;
+  const participantColorblindness = urlParams.get('PARTICIPANT_COLORBLINDNESS') || undefined;
   const screenSize = `${window.innerWidth}x${window.innerHeight}`;
   const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
 
@@ -208,6 +210,8 @@ window.jatos = {
       set: gameSet,
       ...(typeof participantAge !== 'undefined' ? { participant_age: parseInt(participantAge) || undefined } : {}),
       ...(participantGender ? { participant_gender: participantGender } : {}),
+      ...(typeof participantEducation !== 'undefined' ? { participant_education: parseInt(participantEducation) || undefined } : {}),
+      ...(participantColorblindness ? { participant_colorblindness: participantColorblindness } : {}),
       ...(screenSize ? { screen_size: screenSize } : {}),
       ...(deviceType ? { device_type: deviceType } : {}),
     };
@@ -389,6 +393,8 @@ window.jatos = {
           set: gameSet,
           ...(typeof participantAge !== 'undefined' ? { participant_age: parseInt(participantAge) || undefined } : {}),
           ...(participantGender ? { participant_gender: participantGender } : {}),
+          ...(typeof participantEducation !== 'undefined' ? { participant_education: parseInt(participantEducation) || undefined } : {}),
+          ...(participantColorblindness ? { participant_colorblindness: participantColorblindness } : {}),
           ...(screenSize ? { screen_size: screenSize } : {}),
           ...(deviceType ? { device_type: deviceType } : {}),
           trials: imageTrials.map((trial) => {
