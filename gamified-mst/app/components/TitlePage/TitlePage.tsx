@@ -11,6 +11,17 @@ import startBtn from '../../images/start_screen/buttons/start_button.png';
 
 import './TitlePage.css';
 
+// Default test values — valid for all required demographic fields
+const TEST_DEFAULTS = {
+  age: '25',
+  gender: 'other',
+  ethnicity: 'non-hispanic',
+  race: 'other',
+  handedness: 'right',
+  education: '16',
+  colorblindness: 'no',
+};
+
 export default function TitlePage({ route = 'gamified-mst' }: { route?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,6 +68,25 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       const urlProlific = searchParams.get('PROLIFIC_PID');
       const urlSession = searchParams.get('SESSION_ID');
       const urlStudy = searchParams.get('STUDY_ID');
+
+      if (isTestMode) {
+        // In test mode: generate test-{timestamp} IDs and pre-fill demographics
+        const ts = Date.now();
+        setProlificPID(`test-${ts}`);
+        setSessionID(`test-${ts}`);
+        setStudyID(`test-${ts}`);
+        setAge(TEST_DEFAULTS.age);
+        setGender(TEST_DEFAULTS.gender);
+        setEthnicity(TEST_DEFAULTS.ethnicity);
+        setRace(TEST_DEFAULTS.race);
+        setHandedness(TEST_DEFAULTS.handedness);
+        setEducation(TEST_DEFAULTS.education);
+        setColorblindness(TEST_DEFAULTS.colorblindness);
+        if (route === 'gamified-mst') {
+          setShowDemographicsForm(true);
+        }
+        return;
+      }
       
       if (urlProlific) setProlificPID(urlProlific);
       if (urlSession) setSessionID(urlSession);
@@ -66,7 +96,7 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       if (route === 'gamified-mst') {
         if (urlProlific) {
           loadUserData(urlProlific, urlSession || 'initial');
-        } else if (!isTestMode) {
+        } else {
           setShowDemographicsForm(true);
         }
       }
@@ -136,8 +166,8 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       }
     }
 
-    // Require PROLIFIC_PID and SESSION_ID from URL params
-    if (!prolificPID || !sessionID) {
+    // In test mode, IDs are already auto-generated; skip the Prolific param guard
+    if (!isTestMode && (!prolificPID || !sessionID)) {
       alert('Missing required Prolific parameters (PROLIFIC_PID and SESSION_ID)');
       return;
     }
@@ -163,6 +193,7 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       SESSION_ID: sessionID,
       STUDY_ID: studyID || 'default_study',
       route: route,
+      ...(isTestMode ? { test: 'true' } : {}),
     });
     router.push(`/consent?${params.toString()}`);
   };
@@ -329,88 +360,8 @@ export default function TitlePage({ route = 'gamified-mst' }: { route?: string }
       )}
 
       {isTestMode && (
-        <div className="testModeOverlay">
-          <div className="testModeModal">
-            <h2>Enter Test Credentials</h2>
-            
-            <div className="testModeFormGroup">
-              <label>Prolific PID</label>
-              <input
-                type="text"
-                placeholder="Leave empty for default"
-                value={prolificPID}
-                onChange={(e) => setProlificPID(e.target.value)}
-              />
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Session ID</label>
-              <input
-                type="text"
-                placeholder="Leave empty for default"
-                value={sessionID}
-                onChange={(e) => setSessionID(e.target.value)}
-              />
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Study ID</label>
-              <input
-                type="text"
-                placeholder="Leave empty for default"
-                value={studyID}
-                onChange={(e) => setStudyID(e.target.value)}
-              />
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Age</label>
-              <input
-                type="number"
-                min="18"
-                step="1"
-                placeholder="Must be 18 or older"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-              />
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Gender / sex</label>
-              <select value={gender} onChange={(e) => setGender(e.target.value)}>
-                <option value="">Select one</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Years of education</label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                placeholder="e.g. 12, 16"
-                value={education}
-                onChange={(e) => setEducation(e.target.value)}
-              />
-            </div>
-
-            <div className="testModeFormGroup">
-              <label>Colorblindness</label>
-              <select value={colorblindness} onChange={(e) => setColorblindness(e.target.value)}>
-                <option value="">Select one</option>
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-                <option value="unsure">Unsure</option>
-              </select>
-            </div>
-
-            <button className="testModeSubmitBtn" onClick={handleStartGame} disabled={route === 'gamified-mst' ? !canStart : !anteaterClicked}>
-              Start Game
-            </button>
-          </div>
+        <div className="testModeBanner">
+          🧪 Test Mode — IDs auto-generated as <code>test-{'{timestamp}'}</code>
         </div>
       )}
     </div>
