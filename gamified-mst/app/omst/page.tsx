@@ -12,6 +12,7 @@ const ACTIVE_ROUTE = 'omst';
 function OMSTContent() {
   const searchParams = useSearchParams();
   const hasConsented = searchParams.get('consented') === 'true';
+  const isTestMode = searchParams.get('test') === 'true';
   
   const [loading, setLoading] = useState(true);
   const [urlParams, setUrlParams] = useState({ pid: '', sid: '', study: '' });
@@ -47,6 +48,12 @@ function OMSTContent() {
         });
       }
 
+      // In test mode, skip DB fetch and use default set/week values
+      if (isTestMode) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const state = await fetchUserState(pid, sid);
         if (areAllSetsCompleted(state)) {
@@ -68,7 +75,7 @@ function OMSTContent() {
     };
 
     initializeStudy();
-  }, [hasConsented, searchParams]);
+  }, [hasConsented, isTestMode, searchParams]);
 
   if (!hasConsented) {
     return <OmstTitlePage route={ACTIVE_ROUTE} />;
