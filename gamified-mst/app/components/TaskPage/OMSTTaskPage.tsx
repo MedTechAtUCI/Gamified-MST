@@ -114,7 +114,13 @@ export default function OMSTaskPage({
             'U'
           );
           
-          window.location.href = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY || 'https://app.prolific.com/submissions/complete';
+          const params = new URLSearchParams({
+              route: "omst",
+              PROLIFIC_PID: prolificPID,
+              SESSION_ID: sessionID,
+              STUDY_ID: studyID || "default_study",
+          });
+          window.location.href = `/questionnaire?${params.toString()}`;
 
         } catch (error) {
           console.error("Save Error:", error);
