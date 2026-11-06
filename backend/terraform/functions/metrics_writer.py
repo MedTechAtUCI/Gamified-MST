@@ -83,18 +83,32 @@ def lambda_handler(event, context):
 
         screen_size = payload.get("screen_size")
         device_type = payload.get("device_type")
-        
+
+        experience_quality = payload.get("experience_quality")
+        test_location = payload.get("test_location")
+        performance_self_rating = payload.get("performance_self_rating")
+        performance_interferences = payload.get("performance_interferences")
+        negative_symptoms = payload.get("negative_symptoms")
+
         # Ensure numeric fields are properly typed
         if participant_education is not None:
             try:
                 participant_education = int(participant_education)
             except (ValueError, TypeError):
                 participant_education = None
-        
+
         # Ensure participant_age is an integer
         if participant_age is not None:
             participant_age = int(participant_age)
-        
+
+        # Ensure experience_quality is an integer
+        if experience_quality is not None:
+            experience_quality = int(experience_quality)  
+
+        # Ensure performance_self is an integer
+        if performance_self_rating is not None:
+            performance_self_rating = int(performance_self_rating)
+
         # Validate age >= 18 (server-side enforcement)
         if participant_age is not None and participant_age < 18:
             return {
@@ -165,6 +179,25 @@ def lambda_handler(event, context):
                 update_parts.append("game_type = :game_type")
                 expr_values[":game_type"] = game_type
 
+            if experience_quality is not None:
+                update_parts.append("experience_quality = :experience_quality")
+                expr_values[":experience_quality"] = experience_quality
+
+            if test_location:
+                update_parts.append("test_location = :test_location")
+                expr_values[":test_location"] = test_location
+
+            if performance_self_rating is not None:
+                update_parts.append("performance_self_rating = :performance_self_rating")
+                expr_values[":performance_self_rating"] = performance_self_rating
+
+            if performance_interferences:
+                update_parts.append("performance_interferences = :performance_interferences")
+                expr_values[":performance_interferences"] = performance_interferences
+
+            if negative_symptoms:
+                update_parts.append("negative_symptoms = :negative_symptoms")
+                expr_values[":negative_symptoms"] = negative_symptoms
             # Always track session progress (not just at completion)
             # Update or create session record with current state
             # NECESSARY!!! If session already exists, preserve its set_number unless new one is provided
