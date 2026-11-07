@@ -7,9 +7,10 @@ import { useCallback } from "react";
 /* 
 
 TODO
-- add route property for which test (omst, icon, etc.)
-- change questions accordingly
-- validate search params
+- connect to backend:
+- add metric post to questionnairepage
+- question: how does metric posting work? can you just post anything to /metrics and it works automatically?
+- just try it
 
 */
 
@@ -119,21 +120,56 @@ export default function QuestionnairePage() {
             return;
         }
 
-        window.sessionStorage.setItem(
-            "mst_post_study_questionnaire",
-            JSON.stringify({
-                experienceRating: Number(experience),
-                location,
-                performanceRating: Number(performance),
-                interferences,
-                experiences,
-            }),
-        );
+        // window.sessionStorage.setItem(
+        //     "mst_post_study_questionnaire",
+        //     JSON.stringify({
+        //         experienceRating: Number(experience),
+        //         location,
+        //         performanceRating: Number(performance),
+        //         interferences,
+        //         experiences,
+        //     }),
+        // );
+
+        saveSurveyData();
 
         const prolificComplete =
             process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY ||
             "https://app.prolific.com/submissions/complete";
         window.location.href = prolificComplete;
+    };
+
+    const saveSurveyData = async () => {
+        const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
+
+        if (!AWS_API_GATEWAY) {
+            console.error("AWS API Gateway URL not configured");
+            return;
+        }
+
+        try {
+            const payload = {
+                prolificPID,
+                studyID,
+                sessionID,
+                experienceRating: Number(experience),
+                location,
+                performanceRating: Number(performance),
+                interferences,
+                experiences,
+            };
+
+            const response = await fetch(`${AWS_API_GATEWAY}/metrics`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                throw new Error(`Trial save failed: ${response.status}`);
+            }
+        } catch (e) {
+            console.error("Failed to save survey data:", e);
+        }
     };
 
     // Allow Enter key to continue when all required fields are filled
