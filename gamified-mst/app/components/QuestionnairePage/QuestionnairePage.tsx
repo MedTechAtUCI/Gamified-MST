@@ -10,6 +10,7 @@ TODO
 - connect to backend:
 - add metric post to questionnairepage
 - question: how does metric posting work? can you just post anything to /metrics and it works automatically?
+- answer: must match the exact user_id and session_id used during the game trials
 - just try it
 
 */
@@ -109,7 +110,7 @@ export default function QuestionnairePage() {
         setStudyID(searchParams.get("STUDY_ID") || "");
     }, []);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!canContinue) return;
 
         // In test mode, IDs are already auto-generated; skip the Prolific param guard
@@ -120,17 +121,6 @@ export default function QuestionnairePage() {
             return;
         }
 
-        // window.sessionStorage.setItem(
-        //     "mst_post_study_questionnaire",
-        //     JSON.stringify({
-        //         experienceRating: Number(experience),
-        //         location,
-        //         performanceRating: Number(performance),
-        //         interferences,
-        //         experiences,
-        //     }),
-        // );
-
         saveSurveyData();
 
         const prolificComplete =
@@ -138,7 +128,6 @@ export default function QuestionnairePage() {
             "https://app.prolific.com/submissions/complete";
         window.location.href = prolificComplete;
     };
-
     const saveSurveyData = async () => {
         const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
 
@@ -149,24 +138,31 @@ export default function QuestionnairePage() {
 
         try {
             const payload = {
-                prolificPID,
-                studyID,
-                sessionID,
-                experienceRating: Number(experience),
-                location,
-                performanceRating: Number(performance),
-                interferences,
-                experiences,
+                // Must match the exact user_id and session_id used during the game trials
+                user_id: prolificPID,        // Extracted from URL search params (PROLIFIC_PID)
+                session_id: sessionID,       // Extracted from URL search params (SESSION_ID)
+                study_id: studyID,
+                session_completed: true,     // Marks this session as fully completed
+                experience_quality: Number(experience),
+                test_location: location,
+                performance_self_rating: Number(performance),
+                performance_interferences: interferences, // Array of selected interferences
+                negative_symptoms: experiences,           // Array of selected experiences
             };
+
+            console.log("Sending questionnaire metrics payload:", payload);
 
             const response = await fetch(`${AWS_API_GATEWAY}/metrics`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             if (!response.ok) {
-                throw new Error(`Trial save failed: ${response.status}`);
+                throw new Error(`Questionnaire metrics save failed: ${response.status}`);
             }
+
+            console.log("Questionnaire metrics saved successfully!");
         } catch (e) {
             console.error("Failed to save survey data:", e);
         }
@@ -431,5 +427,5 @@ export default function QuestionnairePage() {
                 </div>
             </div>
         </div>
-    );
+    );  
 }
