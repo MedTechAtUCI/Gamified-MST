@@ -62,12 +62,14 @@ export default function ConsentContent() {
         const sessionID = searchParams.get('SESSION_ID') || 'test_session';
         const studyID = searchParams.get('STUDY_ID') || 'test_study';
         const route = searchParams.get('route') || 'gamified-mst'; // Default to gamified
+        const isTest = searchParams.get('test') === 'true';
 
         const params = new URLSearchParams({
           PROLIFIC_PID: prolificPID,
           SESSION_ID: sessionID,
           STUDY_ID: studyID,
           consented: 'true',
+          ...(isTest ? { test: 'true' } : {}),
         });
 
         router.push(`/${route}?${params.toString()}`);
