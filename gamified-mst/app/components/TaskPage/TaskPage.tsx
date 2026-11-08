@@ -504,40 +504,38 @@ const TaskPage = ({
         }
     };
 
-    /* ---------------- Save data at end (backup) ---------------- */
+  /* ---------------- Save data at end to sessionStorage to send to questionaire ---------------- */
 
-    const saveData = async (data: string) => {
-        const AWS_API_GATEWAY = process.env.NEXT_PUBLIC_AWS_METRICS_API;
-        try {
-            const freshGameWeek = await getGameWeekFresh();
-            await sendMetrics(
-                data,
-                sessionData,
-                AWS_API_GATEWAY || "",
-                {
-                    prolificPID,
-                    studyID,
-                    sessionID,
-                    participantAge,
-                    participantGender,
-                    participantEthnicity,
-                    participantRace,
-                    participantHandedness,
-                    participantEducation,
-                    participantColorblindness,
-                    screenSize,
-                    deviceType,
-                },
-                gameState.currentLevel,
-                freshGameWeek,
-                currentSet || 1,
-                true, // session_completed: mark this session as complete
-                "G",
-            );
-        } catch (e) {
-            console.error("Failed to save final data:", e);
-        }
-    };
+  const saveData = async (data: string) => {
+
+    try {
+      const freshGameWeek = await getGameWeekFresh();
+      const userStatePayload = {
+        user_id: prolificPID,
+        session_id: sessionID,
+        study_id: studyID,
+        current_level: gameState.currentLevel,
+        game_week: freshGameWeek,
+        game_type: 'G',
+        set: currentSet || 1,
+        participant_age: participantAge,
+        participant_gender: participantGender,
+        participant_ethnicity: participantEthnicity,
+        participant_race: participantRace,
+        participant_handedness: participantHandedness,
+        participant_education: participantEducation,
+        participant_colorblindness: participantColorblindness,
+        screen_size: screenSize,
+        device_type: deviceType,
+      };
+      // Cache it for the questionnaire page later
+      window.sessionStorage.setItem('user_metric_state', JSON.stringify(userStatePayload));
+
+    }
+    catch (e) {
+      console.error('Failed to save final data:', e);
+    }
+  };
 
     /* ---------------- Prefetch images during walkthrough with retry logic ---------------- */
 

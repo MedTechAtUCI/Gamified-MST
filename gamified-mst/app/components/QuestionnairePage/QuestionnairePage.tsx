@@ -133,10 +133,10 @@ export default function QuestionnairePage() {
 
         saveSurveyData();
 
-        const prolificComplete =
-            process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY ||
-            "https://app.prolific.com/submissions/complete";
-        window.location.href = prolificComplete;
+        // const prolificComplete =
+        //     process.env.NEXT_PUBLIC_PROLIFIC_COMPLETE_STUDY ||
+        //     "https://app.prolific.com/submissions/complete";
+        // window.location.href = prolificComplete;
     };
 
     const saveSurveyData = async () => {
@@ -148,25 +148,36 @@ export default function QuestionnairePage() {
         }
 
         try {
+            // Retrieve saved user and session state from TaskPage session storage
+            const cachedStateStr = window.sessionStorage.getItem("user_metric_state") || "{}";
+            const cachedState = JSON.parse(cachedStateStr);
+
             const payload = {
-                prolificPID,
-                studyID,
-                sessionID,
-                experienceRating: Number(experience),
-                location,
-                performanceRating: Number(performance),
-                interferences,
-                experiences,
+                ...cachedState, // Includes user_id, session_id, demographics, device_type, screen_size, etc.
+                session_completed: true, // Mark session complete when submitting the survey
+                experience_quality: Number(experience),
+                test_location: location,
+                performance_self_rating: Number(performance),
+                performance_interferences: interferences, // Array of selected interferences
+                negative_symptoms: experiences,           // Array of selected experiences
             };
+
+            console.log("Full payload being sent to /metrics:", payload);
+            alert(JSON.stringify(payload, null, 2)); // Debug preview
 
             const response = await fetch(`${AWS_API_GATEWAY}/metrics`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             if (!response.ok) {
-                throw new Error(`Trial save failed: ${response.status}`);
+                throw new Error(`Survey data save failed: ${response.status}`);
             }
+
+            // Optional: clear storage after successful save
+            window.sessionStorage.removeItem("user_metric_state");
+
         } catch (e) {
             console.error("Failed to save survey data:", e);
         }
