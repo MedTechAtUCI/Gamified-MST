@@ -13,9 +13,121 @@ paths:
           default:
             statusCode: "200"
     post:
+      summary: "Record metrics, user state, and trial data"
+      description: "Receives user demographic information, session details, progress status, and optional batch trial data, updating DynamoDB tables accordingly."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: "Unique identifier for the user."
+                session_id:
+                  type: string
+                  description: "Identifier for the current session."
+                current_level:
+                  type: integer
+                  description: "Current level of the user in the game/study."
+                set:
+                  type: integer
+                  description: "Game set number."
+                session_completed:
+                  type: boolean
+                  description: "Indicates whether the session has been completed."
+                game_type:
+                  type: string
+                  default: "G"
+                  description: "Type of game (defaults to 'G' for gamified)."
+                participant_age:
+                  type: integer
+                  description: "Age of the participant (must be >= 18)."
+                participant_gender:
+                  type: string
+                participant_ethnicity:
+                  type: string
+                participant_race:
+                  type: string
+                participant_handedness:
+                  type: string
+                participant_education:
+                  type: integer
+                participant_colorblindness:
+                  type: string
+                screen_size:
+                  type: string
+                device_type:
+                  type: string
+                experience_quality:
+                  type: integer
+                test_location:
+                  type: string
+                performance_self_rating:
+                  type: integer
+                performance_interferences:
+                  type: string
+                negative_symptoms:
+                  type: string
+                trials:
+                  type: array
+                  description: "Array of trial records performed during the session."
+                  items:
+                    type: object
+                    properties:
+                      trial_id:
+                        type: integer
+                      image_id:
+                        type: string
+                      trial_type:
+                        type: string
+                      mst_type:
+                        type: integer
+                      lag:
+                        type: integer
+                      lure_bin:
+                        type: integer
+                      participant_response:
+                        type: string
+                      correct_resp:
+                        type: integer
+                      correct:
+                        type: boolean
+                      reaction_time_ms:
+                        type: integer
+                      timestamp:
+                        type: string
       responses:
-        default:
-          description: "Default response for POST /metrics"
+        "200":
+          description: "State updated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: "Bad Request (e.g., participant under 18)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  type:
+                    type: string
       x-amazon-apigateway-integration:
         payloadFormatVersion: "2.0"
         type: "aws_proxy"
@@ -33,16 +145,16 @@ paths:
             statusCode: "200"
     get:
       parameters:
-      - name: userId
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: sessionId
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: "User state retrieved"
@@ -58,15 +170,15 @@ paths:
         connectionType: "INTERNET"
 x-amazon-apigateway-cors:
   allowMethods:
-  - "OPTIONS"
-  - "POST"
-  - "GET"
+    - "OPTIONS"
+    - "POST"
+    - "GET"
   allowHeaders:
-  - "authorization"
-  - "content-type"
-  - "x-api-key"
+    - "authorization"
+    - "content-type"
+    - "x-api-key"
   maxAge: 0
   allowCredentials: false
   allowOrigins:
-  - "*"
+    - "*"
 x-amazon-apigateway-importexport-version: "1.0"
